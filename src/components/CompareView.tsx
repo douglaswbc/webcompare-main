@@ -12,55 +12,60 @@ const CompareView: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  const fetchPlans = async () => {
-    setLoading(true);
-    
-    if (!userAddress) {
-      // Se não tem endereço, talvez não mostre nada ou mostre destaques
-      setLoading(false);
-      return;
-    }
-
-    // Chamada RPC ao Supabase (A Função Híbrida)
-    const { data, error } = await supabase
-      .rpc('get_available_plans', {
-        user_city: userAddress.localidade,
-        user_uf: userAddress.uf,
-        user_lat: location.state?.coords?.lat || 0, // Envia 0 se não tiver GPS
-        user_long: location.state?.coords?.lng || 0
-      });
-
-    if (error) {
-      console.error('Erro na busca:', error);
-      toast.error('Erro ao buscar planos.');
-    } else {
-      // O Supabase retorna apenas os dados da tabela 'plans'.
-      // Precisamos buscar os relacionamentos (provider, benefits) manualmente
-      // ou ajustar a query SQL para retornar JSON. 
-      // Mas para simplificar, podemos pegar os IDs retornados e buscar os detalhes:
+    const fetchPlans = async () => {
+      setLoading(true);
       
-      const planIds = data.map((p: any) => p.id);
-      
-      if (planIds.length > 0) {
-          const { data: fullPlans } = await supabase
-            .from('plans')
-            .select(`
-              *,
-              providers ( id, name, type, logo_url ),
-              benefits ( id, text, icon )
-            `)
-            .in('id', planIds);
-            
-          setPlans(fullPlans as any);
-      } else {
-          setPlans([]);
+      // Se não tiver dados, para.
+      if (!userAddress) {
+        setLoading(false);
+        return;
       }
-    }
-    setLoading(false);
-  };
 
-  fetchPlans();
-}, [userAddress]);
+      // Limpa o CEP para enviar apenas números (ex: 12345678)
+      // Ajuste conforme seu CSV. Se no CSV tem 7 digitos, garanta que aqui bata.
+      // O ideal é 8 digitos. O replace remove o traço.
+      const cleanCep = userAddress.cep.replace(/\D/g, '');
+
+      try {
+        // Chamada RPC para a nova função (envia CEP + GPS)
+        const { data, error } = await supabase.rpc('get_available_plans', {
+            user_cep: cleanCep,
+            user_lat: location.state?.coords?.lat || 0,
+            user_long: location.state?.coords?.lng || 0
+        });
+
+        if (error) throw error;
+
+        // Se encontrou planos, precisamos carregar os detalhes (joins)
+        // pois a função RPC retorna apenas a tabela 'plans' pura.
+        const planIds = (data as any[]).map(p => p.id);
+
+        if (planIds.length > 0) {
+            const { data: fullPlans } = await supabase
+                .from('plans')
+                .select(`
+                    *,
+                    providers ( id, name, type, logo_url ),
+                    benefits ( id, text, icon ),
+                    plan_coverage ( uf, city )
+                `)
+                .in('id', planIds)
+                .eq('active', true);
+            
+            setPlans(fullPlans as any);
+        } else {
+            setPlans([]);
+        }
+
+      } catch (error) {
+        console.error('Erro ao buscar planos:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlans();
+  }, [userAddress]);
 
   const handleSelectPlan = (plan: Plan) => {
     navigate('/detalhes', { state: { plan, userAddress } });
