@@ -12,38 +12,55 @@ const CompareView: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPlans = async () => {
-      const { data, error } = await supabase
-        .from('plans')
-        .select(`
-          *,
-          providers ( id, name, type, logo_url ),
-          benefits ( id, text, icon ),
-          plan_coverage ( uf, city )
-        `)
-        .eq('active', true);
-
-      if (error) {
-        console.error('Erro ao buscar planos:', error);
-      } else {
-        const allPlans = data as Plan[];
-        const filteredPlans = allPlans.filter(plan => {
-            if (!userAddress) return true;
-            if (!plan.plan_coverage || plan.plan_coverage.length === 0) return true;
-            const hasCoverage = plan.plan_coverage.some(coverage => {
-              const sameState = coverage.uf === userAddress.uf;
-              const cityMatch = coverage.city === null || coverage.city === userAddress.localidade;
-              return sameState && cityMatch;
-            });
-            return hasCoverage;
-        });
-        setPlans(filteredPlans);
-      }
+  const fetchPlans = async () => {
+    setLoading(true);
+    
+    if (!userAddress) {
+      // Se não tem endereço, talvez não mostre nada ou mostre destaques
       setLoading(false);
-    };
+      return;
+    }
 
-    fetchPlans();
-  }, [userAddress]);
+    // Chamada RPC ao Supabase (A Função Híbrida)
+    const { data, error } = await supabase
+      .rpc('get_available_plans', {
+        user_city: userAddress.localidade,
+        user_uf: userAddress.uf,
+        user_lat: location.state?.coords?.lat || 0, // Envia 0 se não tiver GPS
+        user_long: location.state?.coords?.lng || 0
+      });
+
+    if (error) {
+      console.error('Erro na busca:', error);
+      toast.error('Erro ao buscar planos.');
+    } else {
+      // O Supabase retorna apenas os dados da tabela 'plans'.
+      // Precisamos buscar os relacionamentos (provider, benefits) manualmente
+      // ou ajustar a query SQL para retornar JSON. 
+      // Mas para simplificar, podemos pegar os IDs retornados e buscar os detalhes:
+      
+      const planIds = data.map((p: any) => p.id);
+      
+      if (planIds.length > 0) {
+          const { data: fullPlans } = await supabase
+            .from('plans')
+            .select(`
+              *,
+              providers ( id, name, type, logo_url ),
+              benefits ( id, text, icon )
+            `)
+            .in('id', planIds);
+            
+          setPlans(fullPlans as any);
+      } else {
+          setPlans([]);
+      }
+    }
+    setLoading(false);
+  };
+
+  fetchPlans();
+}, [userAddress]);
 
   const handleSelectPlan = (plan: Plan) => {
     navigate('/detalhes', { state: { plan, userAddress } });
