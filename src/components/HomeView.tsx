@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { UserAddress } from '../types';
-import { PROVIDERS } from '../constants';
+import { supabase } from '../supabaseClient'; // <--- Import Supabase
+import { UserAddress, Provider } from '../types'; // <--- Import Provider type
 
 const HomeView: React.FC = () => {
   const navigate = useNavigate();
@@ -11,8 +11,20 @@ const HomeView: React.FC = () => {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [addressData, setAddressData] = useState<Partial<UserAddress> | null>(null);
   const [number, setNumber] = useState('');
+  
+  // Estado para os Provedores (Logos)
+  const [providersList, setProvidersList] = useState<Provider[]>([]);
 
-  // --- LÓGICA DE CEP E GPS (Mantida e otimizada) ---
+  // Buscar Provedores no Banco ao carregar a tela
+  useEffect(() => {
+    const fetchProviders = async () => {
+      const { data } = await supabase.from('providers').select('*').eq('active', true);
+      if (data) setProvidersList(data as any);
+    };
+    fetchProviders();
+  }, []);
+
+  // --- LÓGICA DE CEP E GPS ---
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '');
     setCep(value);
@@ -34,7 +46,6 @@ const HomeView: React.FC = () => {
 
           setTimeout(() => document.getElementById('address-number')?.focus(), 100);
 
-          // Busca Nominatim (GPS)
           try {
             const addressQuery = `${data.logradouro}, ${data.localidade}, ${data.uf}, Brazil`;
             const geoResponse = await fetch(
@@ -86,11 +97,10 @@ const HomeView: React.FC = () => {
     navigate('/comparar', { state: { userAddress: fullAddress, coords } });
   };
 
-  // --- RENDERIZAÇÃO ---
   return (
     <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-slate-50 dark:bg-slate-900 font-sans">
       
-      {/* 1. Header Transparente/Fixo */}
+      {/* Header */}
       <div className="flex items-center absolute top-0 w-full p-6 z-20 justify-between">
         <div className="flex items-center gap-2 text-white drop-shadow-md">
           <div className="bg-[#0096C7] p-2 rounded-lg">
@@ -103,9 +113,8 @@ const HomeView: React.FC = () => {
         </button>
       </div>
 
-      {/* 2. Hero Section (Dobra Principal) */}
+      {/* Hero Section */}
       <div className="relative min-h-[600px] lg:min-h-[700px] flex items-center justify-center px-4 pb-12 pt-24">
-        {/* Imagem de Fundo com Overlay Gradiente */}
         <div 
           className="absolute inset-0 z-0 bg-cover bg-center"
           style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=2070&auto=format&fit=crop")' }}
@@ -114,8 +123,6 @@ const HomeView: React.FC = () => {
         </div>
 
         <div className="relative z-10 w-full max-w-4xl flex flex-col items-center text-center gap-6">
-          
-          {/* Badge de Confiança */}
           <div className="bg-white/10 backdrop-blur-md border border-white/20 py-1 px-4 rounded-full flex items-center gap-2 animate-in slide-in-from-top-4 duration-700">
              <span className="material-symbols-outlined text-[#D4AF37] text-sm">workspace_premium</span>
              <span className="text-white text-xs font-bold tracking-wider uppercase">Comparador #1 do Brasil</span>
@@ -130,7 +137,7 @@ const HomeView: React.FC = () => {
             Compare ofertas de fibra ótica, satélite e 5G disponíveis no seu endereço em segundos. Economize até 40% na sua fatura.
           </p>
 
-          {/* Card de Busca Flutuante */}
+          {/* Card de Busca */}
           <div className="w-full max-w-lg bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl shadow-[#0096C7]/20 border border-slate-100 dark:border-slate-700 mt-4">
             <label className="block text-left text-slate-500 text-xs font-bold uppercase mb-2 ml-1">
                 Verifique a disponibilidade agora
@@ -153,7 +160,6 @@ const HomeView: React.FC = () => {
                 )}
             </div>
 
-            {/* Resultado do Endereço (Expandable) */}
             {addressData && (
               <div className="mt-4 animate-in fade-in slide-in-from-top-2 text-left">
                 <div className="bg-[#0096C7]/10 p-3 rounded-lg border border-[#0096C7]/20 mb-3">
@@ -192,24 +198,26 @@ const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Logos Section (Prova Social - AUMENTADO) */}
+      {/* Logos Section - DINÂMICO AGORA */}
       <div className="bg-white dark:bg-slate-800 py-12 border-b border-slate-100 dark:border-slate-700">
         <p className="text-center text-slate-400 text-sm uppercase font-bold tracking-widest mb-8">Trabalhamos com os melhores provedores</p>
-        
-        {/* Container flexível com centralização e espaçamento maior */}
         <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 px-4">
-          {PROVIDERS.map((p) => (
-            <img 
-                key={p.name} 
-                src={p.logo} 
-                alt={p.name} 
-                className="h-12 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110 opacity-90 hover:opacity-100" 
-            />
-          ))}
+          {providersList.length > 0 ? (
+             providersList.map((p) => (
+               <img 
+                   key={p.id} 
+                   src={p.logo_url} // <--- Nome da coluna no Supabase
+                   alt={p.name} 
+                   className="h-12 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110 opacity-90 hover:opacity-100" 
+               />
+             ))
+          ) : (
+            <p className="text-slate-400">Carregando parceiros...</p>
+          )}
         </div>
       </div>
 
-      {/* 4. Como Funciona (Passo a Passo) */}
+      {/* Como Funciona */}
       <div className="py-20 px-4 max-w-6xl mx-auto">
         <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-2">Como o WebCompare funciona?</h2>
@@ -233,9 +241,8 @@ const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. Features / Benefícios (Design Alternado) */}
+      {/* Features */}
       <div className="bg-slate-900 py-20 px-4 relative overflow-hidden">
-         {/* Background Decoration */}
          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#0096C7] rounded-full blur-[120px] opacity-20 pointer-events-none"></div>
 
          <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-10">
@@ -267,7 +274,7 @@ const HomeView: React.FC = () => {
                  <div className="grid grid-cols-2 gap-4">
                     <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 transform translate-y-8">
                         <span className="text-4xl font-black text-white block mb-1">50k+</span>
-                        <span className="text-sm text-slate-400">Comparaçõesrealizadas</span>
+                        <span className="text-sm text-slate-400">Comparisons realizadas</span>
                     </div>
                     <div className="bg-[#0096C7] p-6 rounded-2xl shadow-lg shadow-blue-500/20">
                         <span className="text-4xl font-black text-white block mb-1">R$ 400</span>
@@ -285,7 +292,7 @@ const HomeView: React.FC = () => {
          </div>
       </div>
 
-      {/* 6. FAQ Simplificado */}
+      {/* FAQ */}
       <div className="py-20 px-4 max-w-3xl mx-auto">
          <h2 className="text-2xl font-bold text-center text-slate-800 dark:text-white mb-10">Dúvidas Frequentes</h2>
          <div className="space-y-4">
@@ -305,7 +312,7 @@ const HomeView: React.FC = () => {
          </div>
       </div>
 
-      {/* 7. Footer */}
+      {/* Footer */}
       <footer className="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
          <div className="max-w-6xl mx-auto px-4 text-center md:text-left grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
@@ -320,17 +327,17 @@ const HomeView: React.FC = () => {
             <div>
                 <h4 className="text-white font-bold mb-4">Empresa</h4>
                 <ul className="space-y-2 text-sm">
-                    <li><a href="#" className="hover:text-[#0096C7]">Sobre Nós</a></li>
-                    <li><a href="#" className="hover:text-[#0096C7]">Carreiras</a></li>
-                    <li><a href="#" className="hover:text-[#0096C7]">Imprensa</a></li>
+                    <li><Link to="/" className="hover:text-[#0096C7]">Sobre Nós</Link></li>
+                    <li><Link to="/" className="hover:text-[#0096C7]">Carreiras</Link></li>
+                    <li><Link to="/" className="hover:text-[#0096C7]">Imprensa</Link></li>
                 </ul>
             </div>
             <div>
                 <h4 className="text-white font-bold mb-4">Legal</h4>
                 <ul className="space-y-2 text-sm">
-                    <li><a href="#" className="hover:text-[#0096C7]">Termos de Uso</a></li>
-                    <li><a href="#" className="hover:text-[#0096C7]">Política de Privacidade</a></li>
-                    <li><a href="/admin" className="hover:text-[#0096C7]">Área do Parceiro</a></li>
+                    <li><Link to="/termos" className="hover:text-[#0096C7]">Termos de Uso</Link></li>
+                    <li><Link to="/privacidade" className="hover:text-[#0096C7]">Política de Privacidade</Link></li>
+                    <li><Link to="/admin" className="hover:text-[#0096C7]">Área do Parceiro</Link></li>
                 </ul>
             </div>
          </div>

@@ -4,13 +4,14 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'; 
 
 // Utilitários
-import AnalyticsTracker from './components/AnalyticsTracker'; // <--- Importar o Rastreador
+import AnalyticsTracker from './components/AnalyticsTracker';
 
 // Views
 import HomeView from './components/HomeView';
 import CompareView from './components/CompareView';
 import DetailsView from './components/DetailsView';
 import ArticlesView from './components/ArticlesView';
+import LegalView from './components/LegalView'; // <--- Importar
 
 // Admin Imports
 import AdminLayout from './admin/AdminLayout';
@@ -21,7 +22,6 @@ import AdminPlans from './admin/AdminPlans';
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      {/* Ativa o rastreamento automático de rotas */}
       <AnalyticsTracker />
       
       <ToastContainer 
@@ -43,6 +43,10 @@ const App: React.FC = () => {
         <Route path="/comparar" element={<CompareView />} />
         <Route path="/detalhes" element={<DetailsView />} />
         <Route path="/artigos" element={<ArticlesView />} />
+        
+        {/* Rotas Legais */}
+        <Route path="/termos" element={<LegalView />} />
+        <Route path="/privacidade" element={<LegalView />} />
 
         {/* Rotas de Admin */}
         <Route path="/admin" element={<AdminLayout />}>
