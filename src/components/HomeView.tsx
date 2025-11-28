@@ -9,12 +9,10 @@ const HomeView: React.FC = () => {
   const [cep, setCep] = useState('');
   const [loadingCep, setLoadingCep] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  
-  // Estado do Formulário
   const [addressData, setAddressData] = useState<Partial<UserAddress> | null>(null);
-  const [manualInput, setManualInput] = useState(false); // Novo: Permite edição manual
+  const [number, setNumber] = useState('');
   
-  // Logos
+  // Estado para os Provedores (Logos do Banco)
   const [providersList, setProvidersList] = useState<Provider[]>([]);
 
   useEffect(() => {
@@ -25,142 +23,95 @@ const HomeView: React.FC = () => {
     fetchProviders();
   }, []);
 
-  // --- FUNÇÃO AUXILIAR: BUSCAR GPS (Nominatim) ---
-  const fetchCoordinates = async (logradouro: string, cidade: string, uf: string) => {
-    try {
-        const query = `${logradouro}, ${cidade}, ${uf}, Brazil`;
-        const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`,
-            { headers: { 'User-Agent': 'WebCompareApp/1.0' } }
-        );
-        const data = await response.json();
-        if (data && data.length > 0) {
-            setCoords({
-                lat: parseFloat(data[0].lat),
-                lng: parseFloat(data[0].lon)
-            });
-            return true;
-        }
-    } catch (err) {
-        console.error('Erro GPS:', err);
-    }
-    return false;
-  };
-
-  // --- LÓGICA DO CEP ---
+  // --- LÓGICA DE CEP E GPS ---
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '');
     setCep(value);
 
     if (value.length === 8) {
       setLoadingCep(true);
-      setManualInput(false); // Reseta modo manual
-      setCoords(null);
-
       try {
-        // TENTATIVA 1: ViaCEP
-        let response = await fetch(`https://viacep.com.br/ws/${value}/json/`);
-        let data = await response.json();
-
-        // TENTATIVA 2: BrasilAPI (Se ViaCEP falhar)
-        if (data.erro) {
-            console.warn('ViaCEP falhou, tentando BrasilAPI...');
-            try {
-                response = await fetch(`https://brasilapi.com.br/api/cep/v2/${value}`);
-                if (response.ok) {
-                    const dataBrasil = await response.json();
-                    data = {
-                        erro: false,
-                        logradouro: dataBrasil.street,
-                        bairro: dataBrasil.neighborhood,
-                        localidade: dataBrasil.city,
-                        uf: dataBrasil.state,
-                        // BrasilAPI v2 às vezes já traz coordenadas!
-                        location: dataBrasil.location 
-                    };
-                    
-                    if (dataBrasil.location?.coordinates) {
-                        setCoords({
-                            lat: dataBrasil.location.coordinates.latitude,
-                            lng: dataBrasil.location.coordinates.longitude
-                        });
-                    }
-                }
-            } catch (err) {
-                console.error('BrasilAPI falhou também');
-            }
-        }
+        const response = await fetch(`https://viacep.com.br/ws/${value}/json/`);
+        const data = await response.json();
 
         if (!data.erro) {
-          // SUCESSO AUTOMÁTICO
+          // CENÁRIO 1: CEP Encontrado no ViaCEP (Sucesso total)
           setAddressData({
             cep: value,
-            logradouro: data.logradouro || '',
-            bairro: data.bairro || '',
-            localidade: data.localidade || '',
-            uf: data.uf || '',
-            numero: ''
+            logradouro: data.logradouro,
+            bairro: data.bairro,
+            localidade: data.localidade,
+            uf: data.uf,
           });
 
-          // Se BrasilAPI não trouxe GPS, buscamos no Nominatim
-          if (!coords && data.logradouro && data.localidade) {
-             const found = await fetchCoordinates(data.logradouro, data.localidade, data.uf);
-             if (found) toast.success("Localização GPS identificada!");
-          }
-          
           setTimeout(() => document.getElementById('address-number')?.focus(), 100);
 
-        } else {
-          // FALHA TOTAL (CEP Novo ou Inexistente)
-          toast.info('Endereço não encontrado automaticamente. Por favor, preencha os dados.');
-          setManualInput(true); // Ativa campos manuais
-          setAddressData({
-              cep: value,
-              logradouro: '',
-              bairro: '',
-              localidade: '',
-              uf: '',
-              numero: ''
-          });
-        }
+          // Busca GPS (Nominatim) apenas se tivermos endereço textual
+          try {
+            const addressQuery = `${data.logradouro}, ${data.localidade}, ${data.uf}, Brazil`;
+            const geoResponse = await fetch(
+              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}`,
+              { headers: { 'User-Agent': 'WebCompareApp/1.0' } }
+            );
+            const geoData = await geoResponse.json();
 
+            if (geoData && geoData.length > 0) {
+              setCoords({
+                lat: parseFloat(geoData[0].lat),
+                lng: parseFloat(geoData[0].lon),
+              });
+              toast.success("Localização GPS identificada!");
+            }
+          } catch (err) {
+            console.error('Erro GPS', err);
+          }
+
+        } else {
+          // CENÁRIO 2: CEP Válido mas não encontrado no ViaCEP (Modo Contingência)
+          // Não mostramos erro fatal, apenas aviso e permitimos continuar
+          console.warn('CEP não encontrado na base pública, ativando busca interna.');
+          toast.info('CEP não catalogado no mapa, mas buscaremos em nossa base interna.');
+          
+          setAddressData({
+            cep: value,
+            logradouro: 'Endereço não identificado (CEP Novo)',
+            bairro: '',
+            localidade: '',
+            uf: '',
+          });
+          
+          // Sem endereço texto, não conseguimos buscar GPS preciso automaticamente
+          setCoords(null); 
+          setTimeout(() => document.getElementById('address-number')?.focus(), 100);
+        }
       } catch (error) {
-        toast.error('Erro de conexão. Verifique sua internet.');
+        console.error('Erro de conexão CEP', error);
+        toast.error('Erro de conexão ao buscar CEP. Tente novamente.');
       } finally {
         setLoadingCep(false);
       }
     } else {
       setAddressData(null);
+      setCoords(null);
     }
   };
 
-  // --- QUANDO USUÁRIO PREENCHE MANUALMENTE ---
-  const handleManualBlur = async () => {
-      // Tenta buscar GPS de novo se o usuário preencheu rua e cidade manualmente
-      if (addressData?.logradouro && addressData?.localidade && !coords) {
-          await fetchCoordinates(addressData.logradouro, addressData.localidade, addressData.uf || '');
-      }
-  }
-
   const handleSubmit = () => {
-    if (!addressData?.logradouro || !addressData.numero) {
-      toast.warn('Preencha o endereço completo para verificarmos a cobertura.');
-      return;
-    }
+    // Se estiver no modo contingência (sem logradouro real), permitimos passar sem número
+    // Mas se o usuário quiser digitar, melhor.
     
-    // Se não tivermos coords ainda (ex: preencheu manual e não saiu do campo), tenta uma última vez
-    if (!coords && addressData.localidade) {
-        // Envia mesmo sem coords, mas a busca por mapa falhará. 
-        // A busca por Tabela (Claro) funcionará.
+    if (!addressData) {
+        toast.warn('Digite um CEP válido.');
+        return;
     }
 
     const fullAddress: UserAddress = {
-      cep: cep,
-      logradouro: addressData.logradouro,
+      cep: addressData.cep || cep,
+      logradouro: addressData.logradouro || 'CEP ' + cep,
       bairro: addressData.bairro || '',
       localidade: addressData.localidade || '',
       uf: addressData.uf || '',
-      numero: addressData.numero,
+      numero: number || 'S/N', // Aceita sem número se o CEP não retornou rua
     };
 
     navigate('/comparar', { state: { userAddress: fullAddress, coords } });
@@ -207,12 +158,12 @@ const HomeView: React.FC = () => {
           </p>
 
           {/* Card de Busca */}
-          <div className="w-full max-w-lg bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl shadow-[#0096C7]/20 border border-slate-100 dark:border-slate-700 mt-4 text-left">
-            <label className="block text-slate-500 text-xs font-bold uppercase mb-2 ml-1">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl shadow-[#0096C7]/20 border border-slate-100 dark:border-slate-700 mt-4">
+            <label className="block text-left text-slate-500 text-xs font-bold uppercase mb-2 ml-1">
                 Verifique a disponibilidade agora
             </label>
             
-            <div className="relative mb-4">
+            <div className="relative">
                 <input
                   className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white px-4 h-14 pl-12 text-lg focus:border-[#0096C7] focus:ring-0 outline-none transition-all"
                   placeholder="Digite seu CEP"
@@ -221,66 +172,38 @@ const HomeView: React.FC = () => {
                   maxLength={8}
                 />
                 <span className="material-symbols-outlined absolute left-4 top-4 text-slate-400">search</span>
+                
                 {loadingCep && (
-                    <div className="absolute right-4 top-4"><span className="material-symbols-outlined animate-spin text-[#0096C7]">progress_activity</span></div>
+                    <div className="absolute right-4 top-4">
+                        <span className="material-symbols-outlined animate-spin text-[#0096C7]">progress_activity</span>
+                    </div>
                 )}
             </div>
 
-            {/* Formulário de Endereço (Automático ou Manual) */}
             {addressData && (
-              <div className="animate-in fade-in slide-in-from-top-2 space-y-3">
-                
-                {/* Se for manual ou incompleto, mostra campos para editar */}
-                {manualInput || !addressData.logradouro ? (
-                    <>
-                        <input 
-                            placeholder="Rua / Logradouro"
-                            className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-[#0096C7] outline-none text-sm"
-                            value={addressData.logradouro}
-                            onChange={e => setAddressData({...addressData, logradouro: e.target.value})}
-                            onBlur={handleManualBlur}
-                        />
-                        <div className="flex gap-2">
-                            <input 
-                                placeholder="Bairro"
-                                className="flex-1 p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-[#0096C7] outline-none text-sm"
-                                value={addressData.bairro}
-                                onChange={e => setAddressData({...addressData, bairro: e.target.value})}
-                            />
-                            <input 
-                                placeholder="Cidade"
-                                className="flex-1 p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-[#0096C7] outline-none text-sm"
-                                value={addressData.localidade}
-                                onChange={e => setAddressData({...addressData, localidade: e.target.value})}
-                                onBlur={handleManualBlur}
-                            />
-                        </div>
-                    </>
-                ) : (
-                    <div className="bg-[#0096C7]/10 p-3 rounded-lg border border-[#0096C7]/20">
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className="material-symbols-outlined text-[#0096C7] text-sm">check_circle</span>
-                            <p className="text-sm font-bold text-slate-700 dark:text-white truncate">{addressData.logradouro}</p>
-                        </div>
-                        <p className="text-xs text-slate-500 pl-6">{addressData.bairro} - {addressData.localidade}/{addressData.uf}</p>
-                        {coords ? (
-                            <p className="text-[10px] text-green-600 pl-6 mt-1 font-bold">✓ GPS Localizado</p>
-                        ) : (
-                            <p className="text-[10px] text-orange-500 pl-6 mt-1">⚠ GPS pendente (Provedores de mapa podem não aparecer)</p>
-                        )}
-                    </div>
-                )}
+              <div className="mt-4 animate-in fade-in slide-in-from-top-2 text-left">
+                <div className="bg-[#0096C7]/10 p-3 rounded-lg border border-[#0096C7]/20 mb-3">
+                   <div className="flex items-center gap-2 mb-1">
+                      <span className="material-symbols-outlined text-[#0096C7] text-sm">check_circle</span>
+                      <p className="text-sm font-bold text-slate-700 dark:text-white truncate">{addressData.logradouro}</p>
+                   </div>
+                   
+                   {addressData.bairro ? (
+                       <p className="text-xs text-slate-500 pl-6">{addressData.bairro} - {addressData.localidade}/{addressData.uf}</p>
+                   ) : (
+                       <p className="text-xs text-orange-500 pl-6 font-bold">Endereço não mapeado no mapa público, verificando cobertura interna...</p>
+                   )}
+
+                   {coords && <p className="text-[10px] text-green-600 pl-6 mt-1 font-bold">✓ Tecnologia Fibra disponível na região</p>}
+                </div>
 
                 <div className="flex gap-2">
                    <input
                      id="address-number"
                      className="w-28 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 h-12 outline-none focus:border-[#0096C7]"
-                     placeholder="Número"
-                     value={addressData.numero || ''}
-                     onChange={(e) => {
-                         setNumber(e.target.value);
-                         setAddressData({...addressData, numero: e.target.value});
-                     }}
+                     placeholder="Nº"
+                     value={number}
+                     onChange={(e) => setNumber(e.target.value)}
                    />
                    <button 
                      onClick={handleSubmit}
@@ -301,7 +224,7 @@ const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* Logos Section */}
+      {/* Logos Section - DINÂMICO */}
       <div className="bg-white dark:bg-slate-800 py-12 border-b border-slate-100 dark:border-slate-700">
         <p className="text-center text-slate-400 text-sm uppercase font-bold tracking-widest mb-8">Trabalhamos com os melhores provedores</p>
         <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 px-4">
@@ -342,6 +265,77 @@ const HomeView: React.FC = () => {
                 </div>
             ))}
         </div>
+      </div>
+
+      {/* Features */}
+      <div className="bg-slate-900 py-20 px-4 relative overflow-hidden">
+         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#0096C7] rounded-full blur-[120px] opacity-20 pointer-events-none"></div>
+
+         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-10">
+             <div className="flex-1 text-left">
+                 <div className="inline-block bg-[#D4AF37] text-white text-xs font-bold px-3 py-1 rounded-full mb-4">
+                    EXCLUSIVIDADE
+                 </div>
+                 <h2 className="text-3xl md:text-4xl font-black text-white mb-6 leading-tight">
+                    Por que usar o <span className="text-[#0096C7]">WebCompare</span>?
+                 </h2>
+                 <ul className="space-y-4">
+                    {[
+                        'Preços atualizados em tempo real diretamente das operadoras.',
+                        'Verificação precisa de cobertura técnica (Fibra vs Cabo).',
+                        'Sem taxas escondidas: o que você vê é o que você paga.',
+                        'Suporte humano para tirar dúvidas antes da contratação.'
+                    ].map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-slate-300">
+                            <span className="material-symbols-outlined text-[#0096C7] mt-0.5">check_circle</span>
+                            {item}
+                        </li>
+                    ))}
+                 </ul>
+                 <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="mt-8 text-white border border-white/30 hover:bg-white/10 px-6 py-3 rounded-xl font-bold transition-all">
+                    Comparar Agora
+                 </button>
+             </div>
+             <div className="flex-1">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 transform translate-y-8">
+                        <span className="text-4xl font-black text-white block mb-1">50k+</span>
+                        <span className="text-sm text-slate-400">Comparisons realizadas</span>
+                    </div>
+                    <div className="bg-[#0096C7] p-6 rounded-2xl shadow-lg shadow-blue-500/20">
+                        <span className="text-4xl font-black text-white block mb-1">R$ 400</span>
+                        <span className="text-sm text-blue-100">Economia média anual por cliente</span>
+                    </div>
+                    <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 col-span-2">
+                        <div className="flex items-center gap-1 text-[#D4AF37] mb-2">
+                            {[1,2,3,4,5].map(s => <span key={s} className="material-symbols-outlined text-sm">star</span>)}
+                        </div>
+                        <p className="text-white italic text-sm">"Encontrei um plano com o dobro da velocidade pagando menos do que eu pagava na operadora antiga."</p>
+                        <p className="text-xs text-slate-400 mt-2 font-bold">- Roberto A., São Paulo</p>
+                    </div>
+                 </div>
+             </div>
+         </div>
+      </div>
+
+      {/* FAQ */}
+      <div className="py-20 px-4 max-w-3xl mx-auto">
+         <h2 className="text-2xl font-bold text-center text-slate-800 dark:text-white mb-10">Dúvidas Frequentes</h2>
+         <div className="space-y-4">
+            {[
+                { q: 'O serviço do WebCompare é gratuito?', a: 'Sim! Você não paga nada para usar nosso comparador. Somos remunerados pelas operadoras quando você contrata um plano.' },
+                { q: 'Os preços são os mesmos do site da operadora?', a: 'Geralmente são melhores. Temos acesso a ofertas exclusivas de canais digitais que nem sempre estão no televendas.' },
+                { q: 'Quanto tempo demora a instalação?', a: 'Depende da operadora e região, mas a média nacional é de 2 a 5 dias úteis após o agendamento.' }
+            ].map((faq, idx) => (
+                <div key={idx} className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-2">
+                        <span className="material-symbols-outlined text-[#0096C7]">help</span>
+                        {faq.q}
+                    </h3>
+                    <p className="text-slate-500 pl-8">{faq.a}</p>
+                </div>
+            ))}
+         </div>
       </div>
 
       {/* Footer */}
