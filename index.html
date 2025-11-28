@@ -17,7 +17,7 @@
     </style>
 
     <!-- ========================================== -->
-    <!-- 1. GOOGLE TAG MANAGER (Substitua GTM-XXXX) -->
+    <!-- 1. GOOGLE TAG MANAGER (Script - Parte 1)   -->
     <!-- ========================================== -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -26,7 +26,7 @@
     })(window,document,'script','dataLayer','GTM-SEU-CODIGO-AQUI');</script>
 
     <!-- ========================================== -->
-    <!-- 2. FACEBOOK PIXEL (Substitua SEU-ID-AQUI)  -->
+    <!-- 2. FACEBOOK PIXEL (Script - Parte 1)       -->
     <!-- ========================================== -->
     <script>
       !function(f,b,e,v,n,t,s)
@@ -40,18 +40,26 @@
       fbq('init', 'SEU-ID-DO-FACEBOOK-AQUI');
       fbq('track', 'PageView');
     </script>
-    <noscript><img height="1" width="1" style="display:none"
-      src="https://www.facebook.com/tr?id=SEU-ID-DO-FACEBOOK-AQUI&ev=PageView&noscript=1"
-    /></noscript>
-    <!-- ========================================== -->
+    <!-- O <noscript> do Facebook foi movido para o body para corrigir o erro -->
 
   </head>
 
   <body class="font-display bg-background-light dark:bg-background-dark text-text-main dark:text-text-inverted antialiased">
-    <!-- Google Tag Manager (noscript) -->
+    
+    <!-- ========================================== -->
+    <!-- GTM (NoScript - Parte 2)                   -->
+    <!-- ========================================== -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-SEU-CODIGO-AQUI"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     
+    <!-- ========================================== -->
+    <!-- FACEBOOK PIXEL (NoScript - Parte 2)        -->
+    <!-- Movi para cá para corrigir o erro parse5   -->
+    <!-- ========================================== -->
+    <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=SEU-ID-DO-FACEBOOK-AQUI&ev=PageView&noscript=1"
+    /></noscript>
+
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
   </body>
