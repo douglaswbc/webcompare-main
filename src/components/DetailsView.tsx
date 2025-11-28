@@ -43,7 +43,7 @@ const DetailsView: React.FC = () => {
       : '';
       
     const text = `Olá! Quero contratar *${plan.name}*.\nNome: ${formData.nome}\nCPF: ${formData.cpf}${addressTxt}`;
-    const url = `https://wa.me/5511999999999?text=${encodeURIComponent(text)}`;
+    const url = `https://wa.me/559192294869?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
     setIsModalOpen(false);
   };
