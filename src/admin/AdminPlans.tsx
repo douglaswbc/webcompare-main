@@ -5,6 +5,20 @@ import { Plan, Provider } from '../types';
 
 type ViewMode = 'plans' | 'providers' | 'import_ceps';
 
+// --- COMPONENTE DE INPUT (Movido para fora para corrigir o bug de foco) ---
+const InputField = ({ label, value, onChange, type = "text", colSpan = 1, placeholder = "" }: any) => (
+  <div className={`col-span-1 md:col-span-${colSpan}`}>
+     <label className="text-slate-400 text-xs uppercase font-bold mb-1 block">{label}</label>
+     <input 
+       type={type} 
+       className="w-full bg-[#0d141c] text-white p-2.5 rounded border border-slate-700 focus:border-[#0096C7] outline-none transition-colors"
+       placeholder={placeholder} 
+       value={value || ''} 
+       onChange={onChange} 
+     />
+  </div>
+);
+
 const AdminPlans: React.FC = () => {
   const [view, setView] = useState<ViewMode>('plans');
   const [loading, setLoading] = useState(true);
@@ -55,16 +69,11 @@ const AdminPlans: React.FC = () => {
         const text = event.target?.result as string;
         if (!text) return;
 
-        // 1. Processar linhas do CSV
         const lines = text.split(/\r\n|\n/);
         const cleanCeps: string[] = [];
 
         lines.forEach(line => {
-            // Remove tudo que não for número
             const numbersOnly = line.replace(/\D/g, '');
-            
-            // Validação básica de CEP (tem que ter pelo menos 7 digitos)
-            // Se tiver 7, adicionamos 0 na frente. Se tiver 8, mantemos.
             if (numbersOnly.length === 8) {
                 cleanCeps.push(numbersOnly);
             } else if (numbersOnly.length === 7) {
@@ -80,7 +89,6 @@ const AdminPlans: React.FC = () => {
             return;
         }
 
-        // 2. Inserir em Lotes (Batches) para não travar
         const BATCH_SIZE = 1000;
         let insertedCount = 0;
         let hasError = false;
@@ -96,7 +104,6 @@ const AdminPlans: React.FC = () => {
             if (error) {
                 console.error('Erro no lote ' + i, error);
                 hasError = true;
-                // Não paramos o loop, tentamos o próximo lote
             } else {
                 insertedCount += batch.length;
                 setImportProgress(Math.round((insertedCount / cleanCeps.length) * 100));
@@ -109,15 +116,13 @@ const AdminPlans: React.FC = () => {
         } else {
             toast.success(`Sucesso! ${insertedCount} CEPs vinculados ao provedor.`);
         }
-        
-        // Limpar input
         e.target.value = '';
     };
 
     reader.readAsText(file);
   };
 
-  // --- CRUD LÓGICA (Mantida) ---
+  // --- CRUD LÓGICA ---
   const handleSave = async () => {
     try {
       const table = view === 'plans' ? 'plans' : 'providers';
@@ -168,14 +173,10 @@ const AdminPlans: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const InputField = ({ label, field, type = "text", colSpan = 1, placeholder = "" }: any) => (
-    <div className={`col-span-1 md:col-span-${colSpan}`}>
-       <label className="text-slate-400 text-xs uppercase font-bold mb-1 block">{label}</label>
-       <input type={type} className="w-full bg-[#0d141c] text-white p-2.5 rounded border border-slate-700 focus:border-[#0096C7] outline-none"
-         placeholder={placeholder} value={formData[field] || ''} onChange={e => setFormData({...formData, [field]: e.target.value})} 
-       />
-    </div>
-  );
+  // Helper para atualizar o form de forma limpa
+  const updateField = (field: string, value: any) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div>
@@ -245,7 +246,7 @@ const AdminPlans: React.FC = () => {
                                 <div className="w-full bg-slate-700 rounded-full h-2">
                                     <div className="bg-[#0096C7] h-2 rounded-full transition-all duration-300" style={{ width: `${importProgress}%` }}></div>
                                 </div>
-                                <p className="text-center text-xs text-slate-500 mt-2">Processando {totalRecords} registros (Isso pode levar alguns minutos)</p>
+                                <p className="text-center text-xs text-slate-500 mt-2">Processando {totalRecords} registros...</p>
                             </div>
                         )}
                     </div>
@@ -297,7 +298,7 @@ const AdminPlans: React.FC = () => {
         </>
       )}
 
-      {/* MODAL DE CRIAÇÃO/EDIÇÃO (Mantido igual) */}
+      {/* MODAL DE CRIAÇÃO/EDIÇÃO */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-[#192633] w-full max-w-4xl rounded-xl border border-white/10 p-6 max-h-[90vh] overflow-y-auto">
@@ -308,44 +309,48 @@ const AdminPlans: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                {view === 'providers' && (
                  <>
-                   <InputField label="Nome" field="name" colSpan={4} />
-                   <InputField label="URL do Logo" field="logo_url" colSpan={4} />
-                   <InputField label="Tipo" field="type" colSpan={4} />
+                   <InputField label="Nome" value={formData.name} onChange={(e: any) => updateField('name', e.target.value)} colSpan={4} />
+                   <InputField label="URL do Logo" value={formData.logo_url} onChange={(e: any) => updateField('logo_url', e.target.value)} colSpan={4} />
+                   <InputField label="Tipo" value={formData.type} onChange={(e: any) => updateField('type', e.target.value)} colSpan={4} />
                  </>
                )}
 
                {view === 'plans' && (
                  <>
                    <div className="col-span-1 md:col-span-4 text-[#0096C7] font-bold text-sm border-b border-white/5 pb-1 mt-2">DADOS GERAIS</div>
-                   <InputField label="Nome do Plano" field="name" colSpan={2} />
+                   <InputField label="Nome do Plano" value={formData.name} onChange={(e: any) => updateField('name', e.target.value)} colSpan={2} />
+                   
                    <div className="col-span-1 md:col-span-2">
                       <label className="text-slate-400 text-xs uppercase font-bold mb-1 block">Provedor</label>
                       <select className="w-full bg-[#0d141c] text-white p-2.5 rounded border border-slate-700 focus:border-[#0096C7] outline-none"
-                        value={formData.provider_id} onChange={e => setFormData({...formData, provider_id: e.target.value})}>
+                        value={formData.provider_id} onChange={e => updateField('provider_id', e.target.value)}>
                         {providers.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
                    </div>
-                   <InputField label="Preço (R$)" field="price" type="number" />
-                   <InputField label="Período" field="period" />
-                   <InputField label="Subtítulo" field="subtitle" colSpan={2} />
+                   
+                   <InputField label="Preço (R$)" type="number" value={formData.price} onChange={(e: any) => updateField('price', e.target.value)} />
+                   <InputField label="Período" value={formData.period} onChange={(e: any) => updateField('period', e.target.value)} />
+                   <InputField label="Subtítulo" value={formData.subtitle} onChange={(e: any) => updateField('subtitle', e.target.value)} colSpan={2} />
 
                    <div className="col-span-1 md:col-span-4 text-[#0096C7] font-bold text-sm border-b border-white/5 pb-1 mt-4">ESPECIFICAÇÕES</div>
-                   <InputField label="Download" field="download_speed" />
-                   <InputField label="Upload" field="upload_speed" />
-                   <InputField label="Conexão" field="connection_type" />
-                   <InputField label="Franquia" field="data_limit" />
-                   <InputField label="Contrato" field="contract_text" colSpan={4} />
+                   <InputField label="Download" value={formData.download_speed} onChange={(e: any) => updateField('download_speed', e.target.value)} />
+                   <InputField label="Upload" value={formData.upload_speed} onChange={(e: any) => updateField('upload_speed', e.target.value)} />
+                   <InputField label="Conexão" value={formData.connection_type} onChange={(e: any) => updateField('connection_type', e.target.value)} />
+                   <InputField label="Franquia" value={formData.data_limit} onChange={(e: any) => updateField('data_limit', e.target.value)} />
+                   <InputField label="Contrato" value={formData.contract_text} onChange={(e: any) => updateField('contract_text', e.target.value)} colSpan={4} />
 
                    <div className="col-span-1 md:col-span-4 text-[#0096C7] font-bold text-sm border-b border-white/5 pb-1 mt-4">VISUAL</div>
-                   <InputField label="URL Banner" field="banner_image" colSpan={4} />
+                   <InputField label="URL Banner" value={formData.banner_image} onChange={(e: any) => updateField('banner_image', e.target.value)} colSpan={4} />
+                   
                    <div className="col-span-1 md:col-span-4 flex flex-col md:flex-row gap-4 my-2 bg-white/5 p-3 rounded">
-                      <label className="flex items-center gap-2 text-white"><input type="checkbox" checked={formData.active} onChange={e => setFormData({...formData, active: e.target.checked})} className="accent-green-500 w-5 h-5"/> Ativo</label>
-                      <label className="flex items-center gap-2 text-white"><input type="checkbox" checked={formData.is_featured} onChange={e => setFormData({...formData, is_featured: e.target.checked})} className="accent-yellow-500 w-5 h-5"/> Destaque</label>
+                      <label className="flex items-center gap-2 text-white"><input type="checkbox" checked={formData.active} onChange={e => updateField('active', e.target.checked)} className="accent-green-500 w-5 h-5"/> Ativo</label>
+                      <label className="flex items-center gap-2 text-white"><input type="checkbox" checked={formData.is_featured} onChange={e => updateField('is_featured', e.target.checked)} className="accent-yellow-500 w-5 h-5"/> Destaque</label>
                    </div>
-                   <InputField label="Texto Badge" field="badge_text" />
-                   <InputField label="Ícone Badge" field="badge_icon" />
-                   <InputField label="Cor BG Badge" field="badge_color_class" />
-                   <InputField label="Cor Txt Badge" field="badge_text_class" />
+                   
+                   <InputField label="Texto Badge" value={formData.badge_text} onChange={(e: any) => updateField('badge_text', e.target.value)} />
+                   <InputField label="Ícone Badge" value={formData.badge_icon} onChange={(e: any) => updateField('badge_icon', e.target.value)} />
+                   <InputField label="Cor BG Badge" value={formData.badge_color_class} onChange={(e: any) => updateField('badge_color_class', e.target.value)} />
+                   <InputField label="Cor Txt Badge" value={formData.badge_text_class} onChange={(e: any) => updateField('badge_text_class', e.target.value)} />
                  </>
                )}
             </div>
