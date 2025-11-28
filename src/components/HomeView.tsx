@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { supabase } from '../supabaseClient'; // <--- Import Supabase
-import { UserAddress, Provider } from '../types'; // <--- Import Provider type
+import { supabase } from '../supabaseClient';
+import { UserAddress, Provider } from '../types';
 
 const HomeView: React.FC = () => {
   const navigate = useNavigate();
@@ -12,10 +12,9 @@ const HomeView: React.FC = () => {
   const [addressData, setAddressData] = useState<Partial<UserAddress> | null>(null);
   const [number, setNumber] = useState('');
   
-  // Estado para os Provedores (Logos)
+  // Estado para os Provedores (Logos do Banco)
   const [providersList, setProvidersList] = useState<Provider[]>([]);
 
-  // Buscar Provedores no Banco ao carregar a tela
   useEffect(() => {
     const fetchProviders = async () => {
       const { data } = await supabase.from('providers').select('*').eq('active', true);
@@ -36,6 +35,7 @@ const HomeView: React.FC = () => {
         const data = await response.json();
 
         if (!data.erro) {
+          // CENÁRIO 1: CEP Encontrado no ViaCEP (Sucesso total)
           setAddressData({
             cep: value,
             logradouro: data.logradouro,
@@ -46,6 +46,7 @@ const HomeView: React.FC = () => {
 
           setTimeout(() => document.getElementById('address-number')?.focus(), 100);
 
+          // Busca GPS (Nominatim) apenas se tivermos endereço textual
           try {
             const addressQuery = `${data.logradouro}, ${data.localidade}, ${data.uf}, Brazil`;
             const geoResponse = await fetch(
@@ -59,19 +60,33 @@ const HomeView: React.FC = () => {
                 lat: parseFloat(geoData[0].lat),
                 lng: parseFloat(geoData[0].lon),
               });
-              toast.success("Cobertura verificada com sucesso!");
+              toast.success("Localização GPS identificada!");
             }
           } catch (err) {
             console.error('Erro GPS', err);
           }
+
         } else {
-          toast.error('CEP não encontrado.');
-          setAddressData(null);
-          setCoords(null);
+          // CENÁRIO 2: CEP Válido mas não encontrado no ViaCEP (Modo Contingência)
+          // Não mostramos erro fatal, apenas aviso e permitimos continuar
+          console.warn('CEP não encontrado na base pública, ativando busca interna.');
+          toast.info('CEP não catalogado no mapa, mas buscaremos em nossa base interna.');
+          
+          setAddressData({
+            cep: value,
+            logradouro: 'Endereço não identificado (CEP Novo)',
+            bairro: '',
+            localidade: '',
+            uf: '',
+          });
+          
+          // Sem endereço texto, não conseguimos buscar GPS preciso automaticamente
+          setCoords(null); 
+          setTimeout(() => document.getElementById('address-number')?.focus(), 100);
         }
       } catch (error) {
-        console.error('Erro CEP', error);
-        toast.error('Erro de conexão.');
+        console.error('Erro de conexão CEP', error);
+        toast.error('Erro de conexão ao buscar CEP. Tente novamente.');
       } finally {
         setLoadingCep(false);
       }
@@ -82,18 +97,23 @@ const HomeView: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    if (!addressData?.logradouro || !number) {
-      toast.warn('Informe o número da residência para continuar.');
-      return;
+    // Se estiver no modo contingência (sem logradouro real), permitimos passar sem número
+    // Mas se o usuário quiser digitar, melhor.
+    
+    if (!addressData) {
+        toast.warn('Digite um CEP válido.');
+        return;
     }
+
     const fullAddress: UserAddress = {
       cep: addressData.cep || cep,
-      logradouro: addressData.logradouro || '',
+      logradouro: addressData.logradouro || 'CEP ' + cep,
       bairro: addressData.bairro || '',
       localidade: addressData.localidade || '',
       uf: addressData.uf || '',
-      numero: number,
+      numero: number || 'S/N', // Aceita sem número se o CEP não retornou rua
     };
+
     navigate('/comparar', { state: { userAddress: fullAddress, coords } });
   };
 
@@ -165,9 +185,15 @@ const HomeView: React.FC = () => {
                 <div className="bg-[#0096C7]/10 p-3 rounded-lg border border-[#0096C7]/20 mb-3">
                    <div className="flex items-center gap-2 mb-1">
                       <span className="material-symbols-outlined text-[#0096C7] text-sm">check_circle</span>
-                      <p className="text-sm font-bold text-slate-700 dark:text-white">{addressData.logradouro}</p>
+                      <p className="text-sm font-bold text-slate-700 dark:text-white truncate">{addressData.logradouro}</p>
                    </div>
-                   <p className="text-xs text-slate-500 pl-6">{addressData.bairro} - {addressData.localidade}/{addressData.uf}</p>
+                   
+                   {addressData.bairro ? (
+                       <p className="text-xs text-slate-500 pl-6">{addressData.bairro} - {addressData.localidade}/{addressData.uf}</p>
+                   ) : (
+                       <p className="text-xs text-orange-500 pl-6 font-bold">Endereço não mapeado no mapa público, verificando cobertura interna...</p>
+                   )}
+
                    {coords && <p className="text-[10px] text-green-600 pl-6 mt-1 font-bold">✓ Tecnologia Fibra disponível na região</p>}
                 </div>
 
@@ -175,7 +201,7 @@ const HomeView: React.FC = () => {
                    <input
                      id="address-number"
                      className="w-28 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 h-12 outline-none focus:border-[#0096C7]"
-                     placeholder="Número"
+                     placeholder="Nº"
                      value={number}
                      onChange={(e) => setNumber(e.target.value)}
                    />
@@ -198,7 +224,7 @@ const HomeView: React.FC = () => {
         </div>
       </div>
 
-      {/* Logos Section - DINÂMICO AGORA */}
+      {/* Logos Section - DINÂMICO */}
       <div className="bg-white dark:bg-slate-800 py-12 border-b border-slate-100 dark:border-slate-700">
         <p className="text-center text-slate-400 text-sm uppercase font-bold tracking-widest mb-8">Trabalhamos com os melhores provedores</p>
         <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 px-4">
@@ -206,7 +232,7 @@ const HomeView: React.FC = () => {
              providersList.map((p) => (
                <img 
                    key={p.id} 
-                   src={p.logo_url} // <--- Nome da coluna no Supabase
+                   src={p.logo_url}
                    alt={p.name} 
                    className="h-12 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110 opacity-90 hover:opacity-100" 
                />
