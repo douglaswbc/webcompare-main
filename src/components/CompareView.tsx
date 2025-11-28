@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { toast } from 'react-toastify';
 import { Plan, UserAddress } from '../types';
 
 const CompareView: React.FC = () => {
@@ -15,57 +16,66 @@ const CompareView: React.FC = () => {
     const fetchPlans = async () => {
       setLoading(true);
       
-      // Se não tiver dados, para.
+      // Se não houver endereço, não busca nada
       if (!userAddress) {
         setLoading(false);
         return;
       }
 
-      // Limpa o CEP para enviar apenas números (ex: 12345678)
-      // Ajuste conforme seu CSV. Se no CSV tem 7 digitos, garanta que aqui bata.
-      // O ideal é 8 digitos. O replace remove o traço.
+      // Limpa o CEP para enviar apenas números (ex: 01234567)
       const cleanCep = userAddress.cep.replace(/\D/g, '');
 
       try {
-        // Chamada RPC para a nova função (envia CEP + GPS)
-        const { data, error } = await supabase.rpc('get_available_plans', {
+        // --- 1. CHAMADA INTELIGENTE (RPC) ---
+        // Essa função SQL (get_available_plans) verifica:
+        // A) Se o CEP está na tabela da Claro (serviceable_ceps)
+        // B) OU Se o GPS cai dentro do mapa da Vero/Desktop (coverage_areas)
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_available_plans', {
             user_cep: cleanCep,
             user_lat: location.state?.coords?.lat || 0,
             user_long: location.state?.coords?.lng || 0
         });
 
-        if (error) throw error;
+        if (rpcError) throw rpcError;
 
-        // Se encontrou planos, precisamos carregar os detalhes (joins)
-        // pois a função RPC retorna apenas a tabela 'plans' pura.
-        const planIds = (data as any[]).map(p => p.id);
-
-        if (planIds.length > 0) {
-            const { data: fullPlans } = await supabase
-                .from('plans')
-                .select(`
-                    *,
-                    providers ( id, name, type, logo_url ),
-                    benefits ( id, text, icon ),
-                    plan_coverage ( uf, city )
-                `)
-                .in('id', planIds)
-                .eq('active', true);
-            
-            setPlans(fullPlans as any);
-        } else {
+        // Se a função não retornar nada, paramos aqui
+        const foundPlans = rpcData as any[];
+        if (!foundPlans || foundPlans.length === 0) {
             setPlans([]);
+            setLoading(false);
+            return;
         }
 
-      } catch (error) {
-        console.error('Erro ao buscar planos:', error);
+        // --- 2. ENRIQUECER OS DADOS ---
+        // A função RPC retorna apenas os dados básicos do plano.
+        // Agora buscamos os detalhes (Logo do provedor, Benefícios, Cobertura) usando os IDs encontrados.
+        const planIds = foundPlans.map(p => p.id);
+
+        const { data: fullPlans, error: plansError } = await supabase
+            .from('plans')
+            .select(`
+                *,
+                providers ( id, name, type, logo_url ),
+                benefits ( id, text, icon ),
+                plan_coverage ( uf, city )
+            `)
+            .in('id', planIds)
+            .eq('active', true);
+
+        if (plansError) throw plansError;
+        
+        setPlans(fullPlans as any);
+
+      } catch (error: any) {
+        console.error('Erro na busca:', error);
+        toast.error('Erro ao buscar planos: ' + error.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchPlans();
-  }, [userAddress]);
+  }, [userAddress]); // Re-executa se o endereço mudar
 
   const handleSelectPlan = (plan: Plan) => {
     navigate('/detalhes', { state: { plan, userAddress } });
@@ -76,7 +86,7 @@ const CompareView: React.FC = () => {
 
   return (
     // Fundo cinza claro para destacar os cards brancos
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-10 font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-10 font-sans transition-colors duration-300">
       
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md p-4 border-b border-slate-200 dark:border-slate-700 flex items-center shadow-sm">
@@ -94,18 +104,24 @@ const CompareView: React.FC = () => {
             <span className="material-symbols-outlined text-[#0096C7] text-sm">location_on</span>
             <p className="text-sm text-slate-700 dark:text-slate-300">
                 Ofertas para: <strong>{userAddress.logradouro}, {userAddress.numero}</strong>
+                <span className="block text-xs opacity-70">CEP: {userAddress.cep}</span>
             </p>
          </div>
       )}
 
       {loading ? (
-        <div className="p-10 text-center flex flex-col items-center gap-2">
-            <span className="material-symbols-outlined animate-spin text-3xl text-[#0096C7]">progress_activity</span>
-            <p className="text-slate-500">Buscando as melhores ofertas...</p>
+        <div className="p-10 text-center flex flex-col items-center gap-4 mt-8">
+            <span className="material-symbols-outlined animate-spin text-4xl text-[#0096C7]">progress_activity</span>
+            <div>
+                <p className="text-slate-800 dark:text-white font-bold">Analisando cobertura...</p>
+                <p className="text-slate-500 text-sm">Consultando viabilidade técnica no CEP {userAddress?.cep}</p>
+            </div>
         </div>
       ) : (
         <div className="flex flex-col gap-6 p-4 max-w-3xl mx-auto">
-          <p className="text-sm text-slate-500 font-medium ml-1">{plans.length} planos encontrados na sua região</p>
+          <p className="text-sm text-slate-500 font-medium ml-1">
+            {plans.length} planos com viabilidade técnica encontrada
+          </p>
           
           {plans.map((plan) => (
             <div 
@@ -169,10 +185,9 @@ const CompareView: React.FC = () => {
                         </p>
                     </div>
                     
-                    {/* BOTÃO AZUL PISCIANO FORÇADO */}
                     <button 
                         onClick={() => handleSelectPlan(plan)}
-                        style={{ backgroundColor: '#0096C7' }} // Garante a cor
+                        style={{ backgroundColor: '#0096C7' }} 
                         className="text-white px-6 py-3 rounded-xl font-bold transition-transform hover:scale-105 shadow-lg shadow-blue-500/30 flex items-center gap-2"
                     >
                         Ver Detalhes
@@ -186,8 +201,16 @@ const CompareView: React.FC = () => {
           {plans.length === 0 && (
               <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700">
                   <span className="material-symbols-outlined text-5xl text-slate-300 mb-3">router</span>
-                  <p className="text-slate-600 dark:text-slate-300 font-medium text-lg">Nenhum plano encontrado.</p>
-                  <p className="text-sm text-slate-400">Tente buscar por outro CEP ou cidade.</p>
+                  <p className="text-slate-600 dark:text-slate-300 font-medium text-lg">Indisponível nesta região</p>
+                  <p className="text-sm text-slate-400 max-w-xs mx-auto mt-2">
+                      Infelizmente nenhum parceiro atende o CEP <strong>{userAddress?.cep}</strong> com tecnologia Fibra no momento.
+                  </p>
+                  <button 
+                    onClick={() => navigate('/')}
+                    className="mt-6 text-[#0096C7] font-bold text-sm hover:underline"
+                  >
+                    Tentar outro CEP
+                  </button>
               </div>
           )}
         </div>
