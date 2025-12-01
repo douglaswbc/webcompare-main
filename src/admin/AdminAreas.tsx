@@ -9,20 +9,29 @@ const AdminAreas: React.FC = () => {
   const [providerName, setProviderName] = useState('');
   const [areaName, setAreaName] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0); 
+  
+  // Estados de Dados
+  const [providers, setProviders] = useState<any[]>([]);
+  const [areas, setAreas] = useState<any[]>([]);
   
   // Estados de Lista e Paginação
-  const [areas, setAreas] = useState<any[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [filterProvider, setFilterProvider] = useState(''); // Filtro para separar provedores
+  const [filterProvider, setFilterProvider] = useState('');
 
   const ITEMS_PER_PAGE = 10;
 
-  // Recarrega sempre que mudar a página ou o filtro
   useEffect(() => { 
+    fetchProviders();
     fetchAreas(); 
   }, [currentPage, filterProvider]);
+
+  const fetchProviders = async () => {
+    const { data } = await supabase.from('providers').select('id, name').order('name');
+    if (data) setProviders(data);
+  };
 
   const fetchAreas = async () => {
     setLoadingList(true);
@@ -31,17 +40,15 @@ const AdminAreas: React.FC = () => {
             .from('coverage_areas')
             .select('id, provider_name, area_name', { count: 'exact' });
 
-        // Aplica o filtro se houver algo digitado
         if (filterProvider) {
             query = query.ilike('provider_name', `%${filterProvider}%`);
         }
 
-        // Calcula o intervalo da paginação (Range)
         const from = (currentPage - 1) * ITEMS_PER_PAGE;
         const to = from + ITEMS_PER_PAGE - 1;
 
         const { data, count, error } = await query
-            .order('provider_name', { ascending: true }) // Agrupa por provedor visualmente
+            .order('provider_name', { ascending: true })
             .order('area_name', { ascending: true })
             .range(from, to);
 
@@ -64,11 +71,39 @@ const AdminAreas: React.FC = () => {
     if(error) toast.error('Erro ao excluir.');
     else { 
         toast.success('Área excluída.'); 
-        fetchAreas(); // Atualiza a lista
+        fetchAreas();
     }
   }
 
-  // --- FUNÇÃO PARA REMOVER A DIMENSÃO Z (ALTITUDE) ---
+  // --- NOVA FUNÇÃO: LIMPAR ÁREAS DO PROVEDOR ---
+  const handleClearProviderAreas = async () => {
+      if (!providerName) {
+          toast.warn('Selecione um provedor primeiro.');
+          return;
+      }
+      
+      if (!confirm(`ATENÇÃO: Isso apagará TODAS as áreas cadastradas para "${providerName}". Deseja continuar?`)) {
+          return;
+      }
+
+      setUploading(true); // Usa o estado de loading para bloquear a tela
+      try {
+          const { error } = await supabase
+            .from('coverage_areas')
+            .delete()
+            .eq('provider_name', providerName);
+
+          if (error) throw error;
+          
+          toast.success(`Todas as áreas de ${providerName} foram removidas.`);
+          fetchAreas(); // Atualiza a lista
+      } catch (error: any) {
+          toast.error('Erro ao limpar áreas: ' + error.message);
+      } finally {
+          setUploading(false);
+      }
+  };
+
   const removeZDimension = (coords: any[]): any[] => {
     return coords.map((point: any) => {
         if (Array.isArray(point[0])) return removeZDimension(point);
@@ -79,11 +114,12 @@ const AdminAreas: React.FC = () => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !providerName) {
-      toast.warn('Preencha o provedor e selecione o arquivo.');
+      toast.warn('Selecione o provedor e o arquivo.');
       return;
     }
 
     setUploading(true);
+    setProgress(0);
 
     try {
       let kmlText = '';
@@ -103,9 +139,34 @@ const AdminAreas: React.FC = () => {
 
       let count = 0;
       let errors = 0;
+      let skipped = 0;
+
+      // Buscar áreas existentes para este provedor para checar duplicidade (pelo nome)
+      // Nota: Para grandes volumes, isso deve ser feito no backend, mas aqui ajuda para arquivos menores.
+      const { data: existingAreas } = await supabase
+        .from('coverage_areas')
+        .select('area_name')
+        .eq('provider_name', providerName);
+      
+      const existingNames = new Set(existingAreas?.map(a => a.area_name));
 
       if (geoJson.type === 'FeatureCollection') {
+        const totalFeatures = geoJson.features.length;
+        let processed = 0;
+
         for (const feature of geoJson.features) {
+          processed++;
+          const currentProgress = Math.round((processed / totalFeatures) * 100);
+          setProgress(currentProgress);
+
+          // Verifica se já existe uma área com esse nome para esse provedor
+          const featureName = areaName || feature.properties?.name || file.name;
+          
+          if (existingNames.has(featureName)) {
+              skipped++; // Pula se já existir (evita duplicidade simples)
+              continue; 
+          }
+
           if (feature.geometry) {
             let finalGeometry = feature.geometry;
 
@@ -123,22 +184,30 @@ const AdminAreas: React.FC = () => {
             if (finalGeometry.type === 'MultiPolygon' || finalGeometry.type === 'Polygon') {
                 const { error } = await supabase.from('coverage_areas').insert({
                   provider_name: providerName,
-                  area_name: areaName || feature.properties?.name || file.name,
+                  area_name: featureName,
                   geom: finalGeometry 
                 });
 
-                if (error) { console.error('Erro Supabase:', error); errors++; } 
-                else { count++; }
+                if (error) { 
+                    console.error('Erro Supabase:', error); 
+                    errors++; 
+                } else { 
+                    count++; 
+                    // Adiciona ao set local para evitar duplicidade dentro do próprio arquivo
+                    existingNames.add(featureName);
+                }
             }
           }
+          if (processed % 10 === 0) await new Promise(r => setTimeout(r, 0));
         }
       }
 
       if (count > 0) { 
-          toast.success(`${count} áreas importadas com sucesso!`); 
+          toast.success(`${count} áreas importadas! (${skipped} duplicadas ignoradas)`); 
           fetchAreas(); 
           setAreaName(''); 
-          // Se quiser limpar o provedor também: setProviderName('');
+      } else if (skipped > 0 && count === 0) {
+          toast.warn('Todas as áreas do arquivo já existiam e foram ignoradas.');
       } else if (errors > 0) {
           toast.error(`Falha ao importar ${errors} polígonos.`);
       } else {
@@ -150,11 +219,11 @@ const AdminAreas: React.FC = () => {
       toast.error('Erro ao processar: ' + error.message);
     } finally { 
       setUploading(false); 
+      setProgress(0);
       e.target.value = '';
     }
   };
 
-  // Cálculos de Paginação
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   return (
@@ -169,30 +238,65 @@ const AdminAreas: React.FC = () => {
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <input 
-            placeholder="Provedor (ex: Vero)" 
-            className="bg-[#0d141c] text-white p-3 rounded border border-slate-700 focus:border-[#0096C7] outline-none"
+          
+          <select 
+            className="bg-[#0d141c] text-white p-3 rounded border border-slate-700 focus:border-[#0096C7] outline-none cursor-pointer"
             value={providerName}
             onChange={e => setProviderName(e.target.value)}
-          />
+            disabled={uploading}
+          >
+            <option value="">Selecione o Provedor</option>
+            {providers.map(p => (
+                <option key={p.id} value={p.name}>{p.name}</option>
+            ))}
+          </select>
+
           <input 
             placeholder="Nome da Área (Opcional)" 
             className="bg-[#0d141c] text-white p-3 rounded border border-slate-700 focus:border-[#0096C7] outline-none"
             value={areaName}
             onChange={e => setAreaName(e.target.value)}
+            disabled={uploading}
           />
-          <label className={`flex items-center justify-center gap-2 bg-[#0096C7] hover:bg-[#0077B6] text-white p-3 rounded cursor-pointer transition-colors font-medium ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-             <span className="material-symbols-outlined">folder_open</span>
-             {uploading ? 'Importando...' : 'Escolher KML/KMZ'}
-             <input type="file" accept=".kml,.kmz" onChange={handleFileUpload} disabled={uploading} className="hidden" />
-          </label>
+          
+          <div className="flex gap-2">
+              <label className={`flex-1 flex items-center justify-center gap-2 bg-[#0096C7] hover:bg-[#0077B6] text-white p-3 rounded cursor-pointer transition-colors font-medium ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <span className="material-symbols-outlined">folder_open</span>
+                {uploading ? 'Processando...' : 'Importar KMZ'}
+                <input type="file" accept=".kml,.kmz" onChange={handleFileUpload} disabled={uploading} className="hidden" />
+              </label>
+
+              {/* Botão de Limpeza */}
+              <button 
+                onClick={handleClearProviderAreas}
+                disabled={!providerName || uploading}
+                title="Apagar todas as áreas deste provedor"
+                className="bg-red-600/20 hover:bg-red-600/40 text-red-400 p-3 rounded border border-red-600/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <span className="material-symbols-outlined">delete_sweep</span>
+              </button>
+          </div>
         </div>
+
+        {uploading && (
+            <div className="mt-4">
+                <div className="flex justify-between text-xs text-slate-300 mb-1">
+                    <span>Processando arquivo...</span>
+                    <span>{progress}%</span>
+                </div>
+                <div className="w-full bg-[#0d141c] rounded-full h-3 border border-slate-700 overflow-hidden">
+                    <div 
+                        className="bg-green-500 h-3 rounded-full transition-all duration-300 ease-out" 
+                        style={{ width: `${progress}%` }}
+                    ></div>
+                </div>
+                <p className="text-center text-xs text-slate-500 mt-2 animate-pulse">Não feche a página enquanto a importação estiver rodando.</p>
+            </div>
+        )}
       </div>
 
-      {/* --- FILTROS E LISTAGEM --- */}
+      {/* --- LISTAGEM --- */}
       <div className="flex flex-col gap-4">
-          
-          {/* Barra de Filtro */}
           <div className="flex items-center justify-between bg-[#192633] p-4 rounded-xl border border-white/10">
              <div className="flex items-center gap-2 w-full max-w-md">
                 <span className="material-symbols-outlined text-slate-400">filter_list</span>
@@ -202,7 +306,7 @@ const AdminAreas: React.FC = () => {
                     value={filterProvider}
                     onChange={(e) => {
                         setFilterProvider(e.target.value);
-                        setCurrentPage(1); // Volta para a página 1 ao filtrar
+                        setCurrentPage(1); 
                     }}
                 />
              </div>
@@ -244,7 +348,6 @@ const AdminAreas: React.FC = () => {
                 </table>
             </div>
 
-            {/* --- PAGINAÇÃO --- */}
             {totalCount > 0 && (
                 <div className="p-4 border-t border-white/10 flex items-center justify-between bg-[#0d141c]">
                     <button 
@@ -255,11 +358,9 @@ const AdminAreas: React.FC = () => {
                         <span className="material-symbols-outlined">chevron_left</span>
                         Anterior
                     </button>
-                    
                     <span className="text-sm text-slate-400">
                         Página <span className="text-white font-bold">{currentPage}</span> de <span className="text-white font-bold">{totalPages}</span>
                     </span>
-
                     <button 
                         disabled={currentPage >= totalPages}
                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
