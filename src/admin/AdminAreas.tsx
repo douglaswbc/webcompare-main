@@ -7,7 +7,7 @@ import * as toGeoJSON from '@mapbox/togeojson';
 const AdminAreas: React.FC = () => {
   // Estados de Upload
   const [providerName, setProviderName] = useState('');
-  const [areaNam] = useState('');
+  const [areaName] = useState('');
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0); 
   
