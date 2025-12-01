@@ -7,7 +7,7 @@ import * as toGeoJSON from '@mapbox/togeojson';
 const AdminAreas: React.FC = () => {
   // Estados de Upload
   const [providerName, setProviderName] = useState('');
-  const [areaName, setAreaName] = useState('');
+  const [areaNam] = useState('');
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0); 
   
@@ -205,7 +205,6 @@ const AdminAreas: React.FC = () => {
       if (count > 0) { 
           toast.success(`${count} áreas importadas! (${skipped} duplicadas ignoradas)`); 
           fetchAreas(); 
-          setAreaName(''); 
       } else if (skipped > 0 && count === 0) {
           toast.warn('Todas as áreas do arquivo já existiam e foram ignoradas.');
       } else if (errors > 0) {
@@ -250,14 +249,6 @@ const AdminAreas: React.FC = () => {
                 <option key={p.id} value={p.name}>{p.name}</option>
             ))}
           </select>
-
-          <input 
-            placeholder="Nome da Área (Opcional)" 
-            className="bg-[#0d141c] text-white p-3 rounded border border-slate-700 focus:border-[#0096C7] outline-none"
-            value={areaName}
-            onChange={e => setAreaName(e.target.value)}
-            disabled={uploading}
-          />
           
           <div className="flex gap-2">
               <label className={`flex-1 flex items-center justify-center gap-2 bg-[#0096C7] hover:bg-[#0077B6] text-white p-3 rounded cursor-pointer transition-colors font-medium ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -320,8 +311,7 @@ const AdminAreas: React.FC = () => {
                 <table className="w-full text-left text-sm text-slate-400 min-w-[600px]">
                 <thead className="bg-[#0d141c] text-white uppercase">
                     <tr>
-                    <th className="p-4">Provedor</th>
-                    <th className="p-4">Nome da Área</th>
+                    <th className="p-4">Provedor</th>                    
                     <th className="p-4 text-right">Ações</th>
                     </tr>
                 </thead>
