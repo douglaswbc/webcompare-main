@@ -4,10 +4,17 @@ import { toast } from 'react-toastify';
 import JSZip from 'jszip';
 import * as toGeoJSON from '@mapbox/togeojson';
 
+// Lista de Estados para o Dropdown
+const ESTADOS = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 
+  'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+];
+
 const AdminAreas: React.FC = () => {
   // Estados de Upload
   const [providerName, setProviderName] = useState('');
-  const [areaName] = useState('');
+  const [areaName, setAreaName] = useState('');
+  const [areaUf, setAreaUf] = useState(''); // <--- NOVO: Estado para UF
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0); 
   
@@ -38,7 +45,8 @@ const AdminAreas: React.FC = () => {
     try {
         let query = supabase
             .from('coverage_areas')
-            .select('id, provider_name, area_name', { count: 'exact' });
+            // Busca também a coluna UF agora
+            .select('id, provider_name, area_name, uf', { count: 'exact' });
 
         if (filterProvider) {
             query = query.ilike('provider_name', `%${filterProvider}%`);
@@ -75,7 +83,6 @@ const AdminAreas: React.FC = () => {
     }
   }
 
-  // --- NOVA FUNÇÃO: LIMPAR ÁREAS DO PROVEDOR ---
   const handleClearProviderAreas = async () => {
       if (!providerName) {
           toast.warn('Selecione um provedor primeiro.');
@@ -86,7 +93,7 @@ const AdminAreas: React.FC = () => {
           return;
       }
 
-      setUploading(true); // Usa o estado de loading para bloquear a tela
+      setUploading(true);
       try {
           const { error } = await supabase
             .from('coverage_areas')
@@ -96,7 +103,7 @@ const AdminAreas: React.FC = () => {
           if (error) throw error;
           
           toast.success(`Todas as áreas de ${providerName} foram removidas.`);
-          fetchAreas(); // Atualiza a lista
+          fetchAreas();
       } catch (error: any) {
           toast.error('Erro ao limpar áreas: ' + error.message);
       } finally {
@@ -113,8 +120,9 @@ const AdminAreas: React.FC = () => {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !providerName) {
-      toast.warn('Selecione o provedor e o arquivo.');
+    // Validação inclui UF agora
+    if (!file || !providerName || !areaUf) {
+      toast.warn('Selecione Provedor, UF (Estado) e o Arquivo.');
       return;
     }
 
@@ -141,12 +149,11 @@ const AdminAreas: React.FC = () => {
       let errors = 0;
       let skipped = 0;
 
-      // Buscar áreas existentes para este provedor para checar duplicidade (pelo nome)
-      // Nota: Para grandes volumes, isso deve ser feito no backend, mas aqui ajuda para arquivos menores.
       const { data: existingAreas } = await supabase
         .from('coverage_areas')
         .select('area_name')
-        .eq('provider_name', providerName);
+        .eq('provider_name', providerName)
+        .eq('uf', areaUf); // Verifica duplicidade no mesmo estado
       
       const existingNames = new Set(existingAreas?.map(a => a.area_name));
 
@@ -159,11 +166,10 @@ const AdminAreas: React.FC = () => {
           const currentProgress = Math.round((processed / totalFeatures) * 100);
           setProgress(currentProgress);
 
-          // Verifica se já existe uma área com esse nome para esse provedor
           const featureName = areaName || feature.properties?.name || file.name;
           
           if (existingNames.has(featureName)) {
-              skipped++; // Pula se já existir (evita duplicidade simples)
+              skipped++;
               continue; 
           }
 
@@ -185,6 +191,7 @@ const AdminAreas: React.FC = () => {
                 const { error } = await supabase.from('coverage_areas').insert({
                   provider_name: providerName,
                   area_name: featureName,
+                  uf: areaUf, // <--- INSERINDO O UF
                   geom: finalGeometry 
                 });
 
@@ -193,7 +200,6 @@ const AdminAreas: React.FC = () => {
                     errors++; 
                 } else { 
                     count++; 
-                    // Adiciona ao set local para evitar duplicidade dentro do próprio arquivo
                     existingNames.add(featureName);
                 }
             }
@@ -203,10 +209,11 @@ const AdminAreas: React.FC = () => {
       }
 
       if (count > 0) { 
-          toast.success(`${count} áreas importadas! (${skipped} duplicadas ignoradas)`); 
+          toast.success(`${count} áreas importadas para ${areaUf}! (${skipped} duplicadas)`); 
           fetchAreas(); 
+          setAreaName(''); 
       } else if (skipped > 0 && count === 0) {
-          toast.warn('Todas as áreas do arquivo já existiam e foram ignoradas.');
+          toast.warn('Todas as áreas já existiam neste estado.');
       } else if (errors > 0) {
           toast.error(`Falha ao importar ${errors} polígonos.`);
       } else {
@@ -236,7 +243,7 @@ const AdminAreas: React.FC = () => {
             Importar Nova Área
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           
           <select 
             className="bg-[#0d141c] text-white p-3 rounded border border-slate-700 focus:border-[#0096C7] outline-none cursor-pointer"
@@ -249,6 +256,27 @@ const AdminAreas: React.FC = () => {
                 <option key={p.id} value={p.name}>{p.name}</option>
             ))}
           </select>
+
+          {/* DROP-DOWN DE ESTADO (UF) */}
+          <select 
+            className="bg-[#0d141c] text-white p-3 rounded border border-slate-700 focus:border-[#0096C7] outline-none cursor-pointer"
+            value={areaUf}
+            onChange={e => setAreaUf(e.target.value)}
+            disabled={uploading}
+          >
+            <option value="">Estado (UF)</option>
+            {ESTADOS.map(uf => (
+                <option key={uf} value={uf}>{uf}</option>
+            ))}
+          </select>
+
+          <input 
+            placeholder="Nome da Área (Opcional)" 
+            className="bg-[#0d141c] text-white p-3 rounded border border-slate-700 focus:border-[#0096C7] outline-none"
+            value={areaName}
+            onChange={e => setAreaName(e.target.value)}
+            disabled={uploading}
+          />
           
           <div className="flex gap-2">
               <label className={`flex-1 flex items-center justify-center gap-2 bg-[#0096C7] hover:bg-[#0077B6] text-white p-3 rounded cursor-pointer transition-colors font-medium ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -257,7 +285,6 @@ const AdminAreas: React.FC = () => {
                 <input type="file" accept=".kml,.kmz" onChange={handleFileUpload} disabled={uploading} className="hidden" />
               </label>
 
-              {/* Botão de Limpeza */}
               <button 
                 onClick={handleClearProviderAreas}
                 disabled={!providerName || uploading}
@@ -311,19 +338,22 @@ const AdminAreas: React.FC = () => {
                 <table className="w-full text-left text-sm text-slate-400 min-w-[600px]">
                 <thead className="bg-[#0d141c] text-white uppercase">
                     <tr>
-                    <th className="p-4">Provedor</th>                    
+                    <th className="p-4">Provedor</th>
+                    <th className="p-4">UF</th>
+                    <th className="p-4">Nome da Área</th>
                     <th className="p-4 text-right">Ações</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                     {loadingList ? (
-                        <tr><td colSpan={3} className="p-8 text-center text-white">Carregando...</td></tr>
+                        <tr><td colSpan={4} className="p-8 text-center text-white">Carregando...</td></tr>
                     ) : areas.map(area => (
                     <tr key={area.id} className="hover:bg-white/5 transition-colors">
                         <td className="p-4 font-bold text-white flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-[#0096C7]"></span>
                             {area.provider_name}
                         </td>
+                        <td className="p-4 font-medium text-white">{area.uf || '-'}</td>
                         <td className="p-4">{area.area_name}</td>
                         <td className="p-4 text-right">
                         <button onClick={() => handleDelete(area.id)} className="text-red-400 hover:text-red-300 bg-red-400/10 px-3 py-1 rounded transition-colors hover:bg-red-400/20">Excluir</button>
@@ -332,7 +362,7 @@ const AdminAreas: React.FC = () => {
                     ))}
                     
                     {!loadingList && areas.length === 0 && (
-                        <tr><td colSpan={3} className="p-8 text-center text-slate-500">Nenhuma área encontrada.</td></tr>
+                        <tr><td colSpan={4} className="p-8 text-center text-slate-500">Nenhuma área encontrada.</td></tr>
                     )}
                 </tbody>
                 </table>

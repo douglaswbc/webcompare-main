@@ -143,6 +143,8 @@ const HomeView: React.FC = () => {
   }
 
   const handleSubmit = () => {
+    // Validação básica: precisamos pelo menos do logradouro e do número
+    // Se o usuário estiver no modo manual, addressData.numero já deve estar preenchido no input
     if (!addressData?.logradouro || !addressData.numero) {
       toast.warn('Preencha o endereço completo para verificarmos a cobertura.');
       return;
@@ -278,7 +280,7 @@ const HomeView: React.FC = () => {
                      placeholder="Número"
                      value={addressData.numero || ''}
                      onChange={(e) => {
-                         // Corrigido: Atualiza apenas o objeto addressData
+                         // CORRIGIDO: Atualiza diretamente o estado addressData
                          setAddressData({...addressData, numero: e.target.value});
                      }}
                    />
@@ -307,13 +309,12 @@ const HomeView: React.FC = () => {
         <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 px-4">
           {providersList.length > 0 ? (
              providersList.map((p) => (
-               /* CORREÇÃO AQUI: Verifica se p.logo_url existe antes de renderizar */
                p.logo_url ? (
                  <img 
                      key={p.id} 
                      src={p.logo_url}
                      alt={p.name} 
-                     className="h-12 md:h-20 w-auto object-contain transition-all duration-500 hover:scale-110 opacity-90 hover:opacity-100" 
+                     className="h-12 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110 opacity-90 hover:opacity-100" 
                  />
                ) : null
              ))

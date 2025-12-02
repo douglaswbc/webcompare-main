@@ -33,7 +33,8 @@ const CompareView: React.FC = () => {
             user_cep: cleanCep,
             user_lat: location.state?.coords?.lat || 0,
             user_long: location.state?.coords?.lng || 0,
-            user_city: userAddress.localidade || '' // <--- CORREÇÃO AQUI
+            user_city: userAddress.localidade || '',
+            user_uf: userAddress.uf || ''
         });
 
         if (rpcError) throw rpcError;
