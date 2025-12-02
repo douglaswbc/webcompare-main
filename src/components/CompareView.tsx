@@ -22,24 +22,24 @@ const CompareView: React.FC = () => {
         return;
       }
 
-      // Limpa o CEP para enviar apenas números (ex: 01234567)
+      // Limpa o CEP para enviar apenas números
       const cleanCep = userAddress.cep.replace(/\D/g, '');
 
       try {
         // --- 1. CHAMADA INTELIGENTE (RPC) ---
-        // Essa função SQL (get_available_plans) verifica:
-        // A) Se o CEP está na tabela da Claro (serviceable_ceps)
-        // B) OU Se o GPS cai dentro do mapa da Vero/Desktop (coverage_areas)
+        // Agora enviamos também a CIDADE (user_city)
         const { data: rpcData, error: rpcError } = await supabase.rpc('get_available_plans', {
             user_cep: cleanCep,
             user_lat: location.state?.coords?.lat || 0,
-            user_long: location.state?.coords?.lng || 0
+            user_long: location.state?.coords?.lng || 0,
+            user_city: userAddress.localidade // <--- NOVO: Enviando a cidade para o "Plano B"
         });
 
         if (rpcError) throw rpcError;
 
-        // Se a função não retornar nada, paramos aqui
         const foundPlans = rpcData as any[];
+        
+        // Se a função não retornar nada
         if (!foundPlans || foundPlans.length === 0) {
             setPlans([]);
             setLoading(false);
@@ -47,8 +47,6 @@ const CompareView: React.FC = () => {
         }
 
         // --- 2. ENRIQUECER OS DADOS ---
-        // A função RPC retorna apenas os dados básicos do plano.
-        // Agora buscamos os detalhes (Logo do provedor, Benefícios, Cobertura) usando os IDs encontrados.
         const planIds = foundPlans.map(p => p.id);
 
         const { data: fullPlans, error: plansError } = await supabase
@@ -75,7 +73,7 @@ const CompareView: React.FC = () => {
     };
 
     fetchPlans();
-  }, [userAddress]); // Re-executa se o endereço mudar
+  }, [userAddress]); 
 
   const handleSelectPlan = (plan: Plan) => {
     navigate('/detalhes', { state: { plan, userAddress } });
@@ -85,7 +83,6 @@ const CompareView: React.FC = () => {
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   return (
-    // Fundo cinza claro para destacar os cards brancos
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-10 font-sans transition-colors duration-300">
       
       {/* Header */}
@@ -104,7 +101,11 @@ const CompareView: React.FC = () => {
             <span className="material-symbols-outlined text-[#0096C7] text-sm">location_on</span>
             <p className="text-sm text-slate-700 dark:text-slate-300">
                 Ofertas para: <strong>{userAddress.logradouro}, {userAddress.numero}</strong>
-                <span className="block text-xs opacity-70">CEP: {userAddress.cep}</span>
+                <span className="block text-xs opacity-70">
+                    CEP: {userAddress.cep} 
+                    {/* Indicador visual se a busca foi por cidade ou GPS (apenas visual) */}
+                    {!location.state?.coords && <span className="ml-2 text-orange-500">(Busca por Região)</span>}
+                </span>
             </p>
          </div>
       )}
@@ -114,7 +115,7 @@ const CompareView: React.FC = () => {
             <span className="material-symbols-outlined animate-spin text-4xl text-[#0096C7]">progress_activity</span>
             <div>
                 <p className="text-slate-800 dark:text-white font-bold">Analisando cobertura...</p>
-                <p className="text-slate-500 text-sm">Consultando viabilidade técnica no CEP {userAddress?.cep}</p>
+                <p className="text-slate-500 text-sm">Consultando viabilidade técnica no local.</p>
             </div>
         </div>
       ) : (
@@ -203,7 +204,7 @@ const CompareView: React.FC = () => {
                   <span className="material-symbols-outlined text-5xl text-slate-300 mb-3">router</span>
                   <p className="text-slate-600 dark:text-slate-300 font-medium text-lg">Indisponível nesta região</p>
                   <p className="text-sm text-slate-400 max-w-xs mx-auto mt-2">
-                      Infelizmente nenhum parceiro atende o CEP <strong>{userAddress?.cep}</strong> com tecnologia Fibra no momento.
+                      Infelizmente nenhum parceiro atende a cidade de <strong>{userAddress?.localidade}</strong> ou o CEP <strong>{userAddress?.cep}</strong> no momento.
                   </p>
                   <button 
                     onClick={() => navigate('/')}
