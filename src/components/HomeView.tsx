@@ -313,7 +313,7 @@ const HomeView: React.FC = () => {
                      key={p.id} 
                      src={p.logo_url}
                      alt={p.name} 
-                     className="h-12 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110 opacity-90 hover:opacity-100" 
+                     className="h-12 md:h-20 w-auto object-contain transition-all duration-500 hover:scale-110 opacity-90 hover:opacity-100" 
                  />
                ) : null
              ))

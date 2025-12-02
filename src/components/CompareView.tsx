@@ -27,12 +27,13 @@ const CompareView: React.FC = () => {
 
       try {
         // --- 1. CHAMADA INTELIGENTE (RPC) ---
-        // Agora enviamos também a CIDADE (user_city)
+        // A função get_available_plans agora exige 4 parâmetros.
+        // Usamos || '' para garantir que user_city nunca seja undefined/null
         const { data: rpcData, error: rpcError } = await supabase.rpc('get_available_plans', {
             user_cep: cleanCep,
             user_lat: location.state?.coords?.lat || 0,
             user_long: location.state?.coords?.lng || 0,
-            user_city: userAddress.localidade // <--- NOVO: Enviando a cidade para o "Plano B"
+            user_city: userAddress.localidade || '' // <--- CORREÇÃO AQUI
         });
 
         if (rpcError) throw rpcError;
