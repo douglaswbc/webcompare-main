@@ -7,8 +7,8 @@ interface ProvidersSectionProps {
 
 const ProvidersSection: React.FC<ProvidersSectionProps> = ({ providers }) => {
     return (
-        <div className="bg-white dark:bg-slate-800 py-12 border-b border-slate-100 dark:border-slate-700">
-            <p className="text-center text-slate-400 text-sm uppercase font-bold tracking-widest mb-8">Trabalhamos com os melhores provedores</p>
+        <div className="bg-background-paper dark:bg-background-paper-dark py-12 border-b border-background-light dark:border-background-dark">
+            <p className="text-center text-text-muted text-sm uppercase font-bold tracking-widest mb-8">Trabalhamos com os melhores provedores</p>
             <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 px-4">
                 {providers.length > 0 ? (
                     providers.map((p) => (
@@ -22,7 +22,7 @@ const ProvidersSection: React.FC<ProvidersSectionProps> = ({ providers }) => {
                         ) : null
                     ))
                 ) : (
-                    <p className="text-slate-400">Carregando parceiros...</p>
+                    <p className="text-text-muted">Carregando parceiros...</p>
                 )}
             </div>
         </div>

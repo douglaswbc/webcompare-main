@@ -84,23 +84,23 @@ const CompareView: React.FC = () => {
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-10 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark pb-10 font-sans transition-colors duration-300">
 
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md p-4 border-b border-slate-200 dark:border-slate-700 flex items-center shadow-sm">
+      <div className="sticky top-0 z-10 bg-background-paper/90 dark:bg-background-paper-dark/90 backdrop-blur-md p-4 border-b border-background-light dark:border-background-dark flex items-center shadow-sm">
         <button
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white mr-4 transition-colors"
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-background-light hover:bg-secondary dark:bg-background-dark dark:hover:bg-background-dark text-text-dark dark:text-text-inverted mr-4 transition-colors"
         >
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
-        <h1 className="text-xl font-bold text-slate-800 dark:text-white">Comparar Planos</h1>
+        <h1 className="text-xl font-bold text-text-dark dark:text-text-inverted">Comparar Planos</h1>
       </div>
 
       {userAddress && (
         <div className="px-4 py-3 bg-primary/10 border-b border-primary/20 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-sm">location_on</span>
-          <p className="text-sm text-slate-700 dark:text-slate-300">
+          <p className="text-sm text-text-dark dark:text-text-inverted/70">
             Ofertas para: <strong>{userAddress.logradouro}, {userAddress.numero}</strong>
             <span className="block text-xs opacity-70">
               CEP: {userAddress.cep}
@@ -115,27 +115,27 @@ const CompareView: React.FC = () => {
         <div className="p-10 text-center flex flex-col items-center gap-4 mt-8">
           <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
           <div>
-            <p className="text-slate-800 dark:text-white font-bold">Analisando cobertura...</p>
-            <p className="text-slate-500 text-sm">Consultando viabilidade técnica no local.</p>
+            <p className="text-text-dark dark:text-text-inverted font-bold">Analisando cobertura...</p>
+            <p className="text-text-main text-sm">Consultando viabilidade técnica no local.</p>
           </div>
         </div>
       ) : (
         <div className="flex flex-col gap-6 p-4 max-w-3xl mx-auto">
-          <p className="text-sm text-slate-500 font-medium ml-1">
+          <p className="text-sm text-text-main font-medium ml-1">
             {plans.length} planos com viabilidade técnica encontrada
           </p>
 
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 dark:border-slate-700"
+              className="bg-background-paper dark:bg-background-paper-dark rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-background-light dark:border-background-dark"
             >
               {/* Banner */}
               <div
                 className="h-32 bg-cover bg-center relative"
                 style={{ backgroundImage: `url("${plan.banner_image}")` }}
               >
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-background-dark/80 to-transparent"></div>
                 {plan.is_featured && (
                   <div className="absolute top-3 right-3 bg-accent text-white text-[10px] uppercase font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-lg tracking-wider">
                     <span className="material-symbols-outlined text-[14px]">workspace_premium</span>
@@ -152,44 +152,44 @@ const CompareView: React.FC = () => {
                     {plan.providers?.logo_url && (
                       <img src={plan.providers.logo_url} alt="logo" className="h-6 w-auto object-contain" />
                     )}
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{plan.providers?.name}</span>
+                    <span className="text-xs font-bold text-text-muted uppercase tracking-widest">{plan.providers?.name}</span>
                   </div>
-                  <h3 className="text-2xl font-black text-slate-800 dark:text-white leading-tight">{plan.name}</h3>
+                  <h3 className="text-2xl font-black text-text-dark dark:text-text-inverted leading-tight">{plan.name}</h3>
                 </div>
 
                 {/* Specs */}
-                <div className="grid grid-cols-2 gap-4 mb-6 bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl">
+                <div className="grid grid-cols-2 gap-4 mb-6 bg-background-light dark:bg-background-dark/50 p-4 rounded-xl">
                   <div>
-                    <span className="text-xs text-slate-500 uppercase font-bold mb-1 block">Download</span>
+                    <span className="text-xs text-text-main uppercase font-bold mb-1 block">Download</span>
                     <div className="flex items-center gap-1 text-primary font-black text-lg">
                       <span className="material-symbols-outlined">download</span>
                       {plan.download_speed}
                     </div>
                   </div>
-                  <div className="border-l border-slate-200 dark:border-slate-600 pl-4">
-                    <span className="text-xs text-slate-500 uppercase font-bold mb-1 block">Upload</span>
-                    <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-bold text-lg">
+                  <div className="border-l border-background-light dark:border-background-dark pl-4">
+                    <span className="text-xs text-text-main uppercase font-bold mb-1 block">Upload</span>
+                    <div className="flex items-center gap-1 text-text-dark dark:text-text-inverted/70 font-bold text-lg">
                       <span className="material-symbols-outlined">upload</span>
                       {plan.upload_speed}
                     </div>
                   </div>
                 </div>
 
-                <div className="w-full h-px bg-slate-100 dark:bg-slate-700 mb-5"></div>
+                <div className="w-full h-px bg-background-light dark:bg-background-dark mb-5"></div>
 
                 {/* Rodapé do Card */}
                 <div className="flex items-end justify-between">
                   <div>
-                    <p className="text-xs text-slate-400 line-through mb-1">R$ {(plan.price * 1.2).toFixed(2)}</p>
+                    <p className="text-xs text-text-muted line-through mb-1">R$ {(plan.price * 1.2).toFixed(2)}</p>
                     <p className="text-3xl font-black text-primary leading-none">
                       {formatPrice(plan.price)}
-                      <span className="text-sm font-medium text-slate-400 ml-1">{plan.period}</span>
+                      <span className="text-sm font-medium text-text-muted ml-1">{plan.period}</span>
                     </p>
                   </div>
 
                   <button
                     onClick={() => handleSelectPlan(plan)}
-                    className="w-full py-3 text-white font-bold rounded-lg hover:brightness-110 transition-all bg-primary shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2"
+                    className="w-full py-3 text-text-inverted font-bold rounded-lg hover:brightness-110 transition-all bg-primary shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
                   >
                     Ver Detalhes
                     <span className="material-symbols-outlined text-lg">arrow_forward</span>
@@ -200,10 +200,10 @@ const CompareView: React.FC = () => {
           ))}
 
           {plans.length === 0 && (
-            <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700">
-              <span className="material-symbols-outlined text-5xl text-slate-300 mb-3">router</span>
-              <p className="text-slate-600 dark:text-slate-300 font-medium text-lg">Indisponível nesta região</p>
-              <p className="text-sm text-slate-400 max-w-xs mx-auto mt-2">
+            <div className="text-center py-12 bg-background-paper dark:bg-background-paper-dark rounded-2xl border-2 border-dashed border-background-light dark:border-background-dark">
+              <span className="material-symbols-outlined text-5xl text-text-muted mb-3">router</span>
+              <p className="text-text-dark dark:text-text-inverted/70 font-medium text-lg">Indisponível nesta região</p>
+              <p className="text-sm text-text-muted max-w-xs mx-auto mt-2">
                 Infelizmente nenhum parceiro atende a cidade de <strong>{userAddress?.localidade}</strong> ou o CEP <strong>{userAddress?.cep}</strong> no momento.
               </p>
               <button

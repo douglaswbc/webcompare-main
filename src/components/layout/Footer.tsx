@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
     return (
-        <footer className="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
+        <footer className="bg-background-dark text-text-muted py-12 border-t border-background-dark">
             <div className="max-w-6xl mx-auto px-4 text-center md:text-left grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div className="col-span-1 md:col-span-2">
-                    <div className="flex items-center gap-2 text-white mb-4 justify-center md:justify-start">
+                    <div className="flex items-center gap-2 text-text-inverted mb-4 justify-center md:justify-start">
                         <span className="material-symbols-outlined text-primary">wifi_find</span>
                         <span className="font-bold text-xl">WebCompare</span>
                     </div>
@@ -15,7 +15,7 @@ const Footer: React.FC = () => {
                     </p>
                 </div>
                 <div>
-                    <h4 className="text-white font-bold mb-4">Empresa</h4>
+                    <h4 className="text-text-inverted font-bold mb-4">Empresa</h4>
                     <ul className="space-y-2 text-sm">
                         <li><Link to="/" className="hover:text-primary">Sobre Nós</Link></li>
                         <li><Link to="/" className="hover:text-primary">Carreiras</Link></li>
@@ -23,7 +23,7 @@ const Footer: React.FC = () => {
                     </ul>
                 </div>
                 <div>
-                    <h4 className="text-white font-bold mb-4">Legal</h4>
+                    <h4 className="text-text-inverted font-bold mb-4">Legal</h4>
                     <ul className="space-y-2 text-sm">
                         <li><Link to="/termos" className="hover:text-primary">Termos de Uso</Link></li>
                         <li><Link to="/privacidade" className="hover:text-primary">Política de Privacidade</Link></li>
@@ -31,7 +31,7 @@ const Footer: React.FC = () => {
                     </ul>
                 </div>
             </div>
-            <div className="text-center mt-12 pt-8 border-t border-slate-800 text-xs">
+            <div className="text-center mt-12 pt-8 border-t border-background-dark text-xs">
                 © 2023 WebCompare Tecnologia. Todos os direitos reservados.
             </div>
         </footer>
