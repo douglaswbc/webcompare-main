@@ -25,7 +25,7 @@ export interface Plan {
   period: string;
   subtitle: string;
   banner_image: string;
-  
+
   // Badge Info (opcionais)
   badge_text?: string;
   badge_icon?: string;
@@ -41,7 +41,8 @@ export interface Plan {
   providers?: Provider; // Joined do Supabase
   benefits?: Benefit[];
 
-
+  // UI Flags
+  is_featured?: boolean;
 }
 
 export interface UserAddress {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify'; 
-import 'react-toastify/dist/ReactToastify.css'; 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Utilitários
 import AnalyticsTracker from './components/AnalyticsTracker';
@@ -18,13 +18,14 @@ import AdminLayout from './admin/AdminLayout';
 import AdminLeads from './admin/AdminLeads';
 import AdminAreas from './admin/AdminAreas';
 import AdminPlans from './admin/AdminPlans';
+import AdminArticles from './admin/AdminArticles';
 
 const App: React.FC = () => {
   return (
     <BrowserRouter>
       <AnalyticsTracker />
-      
-      <ToastContainer 
+
+      <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
@@ -35,6 +36,7 @@ const App: React.FC = () => {
         draggable
         pauseOnHover
         theme="dark"
+        aria-label="Notificações do Sistema"
       />
 
       <Routes>
@@ -43,16 +45,17 @@ const App: React.FC = () => {
         <Route path="/comparar" element={<CompareView />} />
         <Route path="/detalhes" element={<DetailsView />} />
         <Route path="/artigos" element={<ArticlesView />} />
-        
+
         {/* Rotas Legais */}
         <Route path="/termos" element={<LegalView />} />
         <Route path="/privacidade" element={<LegalView />} />
 
         {/* Rotas de Admin */}
         <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminLeads />} />
-            <Route path="areas" element={<AdminAreas />} />
-            <Route path="planos" element={<AdminPlans />} />
+          <Route index element={<AdminLeads />} />
+          <Route path="areas" element={<AdminAreas />} />
+          <Route path="planos" element={<AdminPlans />} />
+          <Route path="artigos" element={<AdminArticles />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

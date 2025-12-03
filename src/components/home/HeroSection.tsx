@@ -25,13 +25,13 @@ const HeroSection: React.FC = () => {
 
             <div className="relative z-10 w-full max-w-4xl flex flex-col items-center text-center gap-6">
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 py-1 px-4 rounded-full flex items-center gap-2 animate-in slide-in-from-top-4 duration-700">
-                    <span className="material-symbols-outlined text-[#D4AF37] text-sm">workspace_premium</span>
+                    <span className="material-symbols-outlined text-accent text-sm">workspace_premium</span>
                     <span className="text-white text-xs font-bold tracking-wider uppercase">Comparador #1 do Brasil</span>
                 </div>
 
                 <h1 className="text-4xl md:text-6xl font-black text-white leading-tight drop-shadow-xl">
                     Sua Internet Ideal <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#0096C7] to-[#48CAE4]">Pelo Menor Preço</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-light">Pelo Menor Preço</span>
                 </h1>
 
                 <p className="text-slate-200 text-lg md:text-xl max-w-2xl font-light">
@@ -39,14 +39,14 @@ const HeroSection: React.FC = () => {
                 </p>
 
                 {/* Card de Busca */}
-                <div className="w-full max-w-lg bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl shadow-[#0096C7]/20 border border-slate-100 dark:border-slate-700 mt-4 text-left">
+                <div className="w-full max-w-lg bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl shadow-primary/20 border border-slate-100 dark:border-slate-700 mt-4 text-left">
                     <label className="block text-slate-500 text-xs font-bold uppercase mb-2 ml-1">
                         Verifique a disponibilidade agora
                     </label>
 
                     <div className="relative mb-4">
                         <input
-                            className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white px-4 h-14 pl-12 text-lg focus:border-[#0096C7] focus:ring-0 outline-none transition-all"
+                            className="w-full rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white px-4 h-14 pl-12 text-lg focus:border-primary focus:ring-0 outline-none transition-all"
                             placeholder="Digite seu CEP"
                             value={cep}
                             onChange={handleCepChange}
@@ -54,7 +54,7 @@ const HeroSection: React.FC = () => {
                         />
                         <span className="material-symbols-outlined absolute left-4 top-4 text-slate-400">search</span>
                         {loadingCep && (
-                            <div className="absolute right-4 top-4"><span className="material-symbols-outlined animate-spin text-[#0096C7]">progress_activity</span></div>
+                            <div className="absolute right-4 top-4"><span className="material-symbols-outlined animate-spin text-primary">progress_activity</span></div>
                         )}
                     </div>
 
@@ -67,7 +67,7 @@ const HeroSection: React.FC = () => {
                                 <>
                                     <input
                                         placeholder="Rua / Logradouro"
-                                        className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-[#0096C7] outline-none text-sm"
+                                        className="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-primary outline-none text-sm"
                                         value={addressData.logradouro}
                                         onChange={e => setAddressData({ ...addressData, logradouro: e.target.value })}
                                         onBlur={handleManualBlur}
@@ -75,38 +75,25 @@ const HeroSection: React.FC = () => {
                                     <div className="flex gap-2">
                                         <input
                                             placeholder="Bairro"
-                                            className="flex-1 p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-[#0096C7] outline-none text-sm"
+                                            className="flex-1 p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-primary outline-none text-sm"
                                             value={addressData.bairro}
                                             onChange={e => setAddressData({ ...addressData, bairro: e.target.value })}
                                         />
                                         <input
                                             placeholder="Cidade"
-                                            className="flex-1 p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-[#0096C7] outline-none text-sm"
+                                            className="flex-1 p-3 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 focus:border-primary outline-none text-sm"
                                             value={addressData.localidade}
                                             onChange={e => setAddressData({ ...addressData, localidade: e.target.value })}
-                                            onBlur={handleManualBlur}
                                         />
+                                        <p className="text-[10px] text-orange-500 pl-6 mt-1">⚠ GPS pendente (Provedores de mapa podem não aparecer)</p>
                                     </div>
                                 </>
-                            ) : (
-                                <div className="bg-[#0096C7]/10 p-3 rounded-lg border border-[#0096C7]/20">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="material-symbols-outlined text-[#0096C7] text-sm">check_circle</span>
-                                        <p className="text-sm font-bold text-slate-700 dark:text-white truncate">{addressData.logradouro}</p>
-                                    </div>
-                                    <p className="text-xs text-slate-500 pl-6">{addressData.bairro} - {addressData.localidade}/{addressData.uf}</p>
-                                    {coords ? (
-                                        <p className="text-[10px] text-green-600 pl-6 mt-1 font-bold">✓ GPS Localizado</p>
-                                    ) : (
-                                        <p className="text-[10px] text-orange-500 pl-6 mt-1">⚠ GPS pendente (Provedores de mapa podem não aparecer)</p>
-                                    )}
-                                </div>
-                            )}
+                            ) : null}
 
                             <div className="flex gap-2">
                                 <input
                                     id="address-number"
-                                    className="w-28 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 h-12 outline-none focus:border-[#0096C7]"
+                                    className="w-28 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 h-12 outline-none focus:border-primary"
                                     placeholder="Número"
                                     value={addressData.numero || ''}
                                     onChange={(e) => {
@@ -115,7 +102,7 @@ const HeroSection: React.FC = () => {
                                 />
                                 <button
                                     onClick={handleSubmit}
-                                    className="flex-1 bg-[#0096C7] hover:bg-[#0077B6] text-white font-bold rounded-xl h-12 shadow-lg shadow-blue-500/30 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+                                    className="flex-1 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl h-12 shadow-lg shadow-primary/30 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
                                 >
                                     Ver Planos
                                     <span className="material-symbols-outlined">arrow_forward</span>

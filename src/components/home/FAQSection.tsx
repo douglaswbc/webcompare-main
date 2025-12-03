@@ -12,7 +12,7 @@ const FAQSection: React.FC = () => {
                 ].map((faq, idx) => (
                     <div key={idx} className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
                         <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-2">
-                            <span className="material-symbols-outlined text-[#0096C7]">help</span>
+                            <span className="material-symbols-outlined text-primary">help</span>
                             {faq.q}
                         </h3>
                         <p className="text-slate-500 pl-8">{faq.a}</p>

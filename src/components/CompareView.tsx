@@ -98,8 +98,8 @@ const CompareView: React.FC = () => {
       </div>
 
       {userAddress && (
-        <div className="px-4 py-3 bg-[#0096C7]/10 border-b border-[#0096C7]/20 flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#0096C7] text-sm">location_on</span>
+        <div className="px-4 py-3 bg-primary/10 border-b border-primary/20 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-sm">location_on</span>
           <p className="text-sm text-slate-700 dark:text-slate-300">
             Ofertas para: <strong>{userAddress.logradouro}, {userAddress.numero}</strong>
             <span className="block text-xs opacity-70">
@@ -113,7 +113,7 @@ const CompareView: React.FC = () => {
 
       {loading ? (
         <div className="p-10 text-center flex flex-col items-center gap-4 mt-8">
-          <span className="material-symbols-outlined animate-spin text-4xl text-[#0096C7]">progress_activity</span>
+          <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
           <div>
             <p className="text-slate-800 dark:text-white font-bold">Analisando cobertura...</p>
             <p className="text-slate-500 text-sm">Consultando viabilidade técnica no local.</p>
@@ -137,7 +137,7 @@ const CompareView: React.FC = () => {
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
                 {plan.is_featured && (
-                  <div className="absolute top-3 right-3 bg-[#D4AF37] text-white text-[10px] uppercase font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-lg tracking-wider">
+                  <div className="absolute top-3 right-3 bg-accent text-white text-[10px] uppercase font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-lg tracking-wider">
                     <span className="material-symbols-outlined text-[14px]">workspace_premium</span>
                     Destaque
                   </div>
@@ -161,7 +161,7 @@ const CompareView: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 mb-6 bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl">
                   <div>
                     <span className="text-xs text-slate-500 uppercase font-bold mb-1 block">Download</span>
-                    <div className="flex items-center gap-1 text-[#0096C7] font-black text-lg">
+                    <div className="flex items-center gap-1 text-primary font-black text-lg">
                       <span className="material-symbols-outlined">download</span>
                       {plan.download_speed}
                     </div>
@@ -181,7 +181,7 @@ const CompareView: React.FC = () => {
                 <div className="flex items-end justify-between">
                   <div>
                     <p className="text-xs text-slate-400 line-through mb-1">R$ {(plan.price * 1.2).toFixed(2)}</p>
-                    <p className="text-3xl font-black text-[#0096C7] leading-none">
+                    <p className="text-3xl font-black text-primary leading-none">
                       {formatPrice(plan.price)}
                       <span className="text-sm font-medium text-slate-400 ml-1">{plan.period}</span>
                     </p>
@@ -189,8 +189,7 @@ const CompareView: React.FC = () => {
 
                   <button
                     onClick={() => handleSelectPlan(plan)}
-                    style={{ backgroundColor: '#0096C7' }}
-                    className="text-white px-6 py-3 rounded-xl font-bold transition-transform hover:scale-105 shadow-lg shadow-blue-500/30 flex items-center gap-2"
+                    className="w-full py-3 text-white font-bold rounded-lg hover:brightness-110 transition-all bg-primary shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2"
                   >
                     Ver Detalhes
                     <span className="material-symbols-outlined text-lg">arrow_forward</span>
@@ -209,7 +208,7 @@ const CompareView: React.FC = () => {
               </p>
               <button
                 onClick={() => navigate('/')}
-                className="mt-6 text-[#0096C7] font-bold text-sm hover:underline"
+                className="mt-6 text-primary font-bold text-sm hover:underline"
               >
                 Tentar outro CEP
               </button>

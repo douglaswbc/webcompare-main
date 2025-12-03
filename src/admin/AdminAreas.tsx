@@ -244,69 +244,76 @@ const AdminAreas: React.FC = () => {
     const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
     return (
-        <div>
-            <h2 className="text-2xl font-bold text-white mb-6">Mapas de Cobertura</h2>
+        <div className="p-6">
+            <h1 className="text-2xl font-bold text-white mb-6">Gerenciar Áreas de Cobertura</h1>
 
-            {/* --- BOX DE IMPORTAÇÃO --- */}
-            <div className="bg-[#192633] p-6 rounded-xl border border-white/10 mb-8 shadow-lg">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#0096C7]">upload_file</span>
-                    Importar Nova Área
-                </h3>
+            {/* --- FORMULÁRIO DE UPLOAD --- */}
+            <div className="bg-background-paper-dark p-6 rounded-xl border border-white/10 mb-8 max-w-2xl">
+                <h3 className="text-lg font-bold text-white mb-4">Importar KML/KMZ</h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-
-                    <div className="space-y-4">
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-slate-400 text-xs uppercase font-bold mb-2">Provedor</label>
                         <select
-                            className="w-full bg-[#0d141c] text-white p-3 rounded border border-slate-700 focus:border-[#0096C7] outline-none cursor-pointer"
+                            className="w-full bg-slate-900 text-white p-3 rounded border border-slate-700 focus:border-primary outline-none"
                             value={providerName}
-                            onChange={e => setProviderName(e.target.value)}
-                            disabled={uploading}
+                            onChange={(e) => setProviderName(e.target.value)}
                         >
-                            <option value="">Selecione o Provedor</option>
+                            <option value="">Selecione...</option>
                             {providers.map(p => (
                                 <option key={p.id} value={p.name}>{p.name}</option>
                             ))}
                         </select>
+                    </div>
 
+                    <div>
+                        <label className="block text-slate-400 text-xs uppercase font-bold mb-2">Nome da Área (Opcional)</label>
                         <input
-                            placeholder="Nome da Área (Opcional)"
-                            className="w-full bg-[#0d141c] text-white p-3 rounded border border-slate-700 focus:border-[#0096C7] outline-none"
+                            className="w-full bg-slate-900 text-white p-3 rounded border border-slate-700 focus:border-primary outline-none"
+                            placeholder="Ex: Zona Norte, Centro..."
                             value={areaName}
-                            onChange={e => setAreaName(e.target.value)}
-                            disabled={uploading}
+                            onChange={(e) => setAreaName(e.target.value)}
                         />
+                        <p className="text-xs text-slate-500 mt-1">Se vazio, usará o nome do polígono no KML.</p>
+                    </div>
 
-                        <div className="flex gap-2">
-                            <label className={`flex - 1 flex items - center justify - center gap - 2 bg - [#0096C7] hover: bg - [#0077B6] text - white p - 3 rounded cursor - pointer transition - colors font - medium ${uploading ? 'opacity-50 cursor-not-allowed' : ''} `}>
-                                <span className="material-symbols-outlined">folder_open</span>
-                                {uploading ? 'Processando...' : 'Importar KMZ'}
-                                <input type="file" accept=".kml,.kmz" onChange={handleFileUpload} disabled={uploading} className="hidden" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className={`transition-opacity ${!providerName ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                            <label className="block text-slate-400 text-xs uppercase font-bold mb-2">Arquivo KML/KMZ</label>
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-600 rounded-lg cursor-pointer hover:bg-slate-900 hover:border-primary transition-colors">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <span className="material-symbols-outlined text-slate-400 text-3xl mb-2">cloud_upload</span>
+                                    <p className="mb-2 text-sm text-slate-400"><span className="font-semibold">Clique para enviar</span></p>
+                                </div>
+                                <input type="file" accept=".kml,.kmz" className="hidden" onChange={handleFileUpload} disabled={uploading} />
                             </label>
+                        </div>
 
+                        <div className="flex items-end">
                             <button
                                 onClick={handleClearProviderAreas}
                                 disabled={!providerName || uploading}
                                 title="Apagar todas as áreas deste provedor"
-                                className="bg-red-600/20 hover:bg-red-600/40 text-red-400 p-3 rounded border border-red-600/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                className="w-full bg-red-600/20 hover:bg-red-600/40 text-red-400 p-3 rounded border border-red-600/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 h-32"
                             >
                                 <span className="material-symbols-outlined">delete_sweep</span>
+                                <span className="text-sm font-bold">Limpar Áreas</span>
                             </button>
                         </div>
                     </div>
 
                     {/* SELETOR DE MÚLTIPLOS ESTADOS */}
-                    <div className="bg-[#0d141c] p-4 rounded border border-slate-700">
+                    <div className="bg-slate-900 p-4 rounded border border-slate-700">
                         <label className="block text-slate-400 text-xs uppercase font-bold mb-2">Selecione os Estados (UF)</label>
                         <div className="grid grid-cols-5 gap-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
                             {ESTADOS.map(uf => (
                                 <button
                                     key={uf}
                                     onClick={() => !uploading && toggleUf(uf)}
-                                    className={`text - xs font - bold py - 1.5 rounded transition - all ${selectedUfs.includes(uf)
-                                        ? 'bg-[#0096C7] text-white'
+                                    className={`text-xs font-bold py-1.5 rounded transition-all ${selectedUfs.includes(uf)
+                                        ? 'bg-primary text-white'
                                         : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                        } `}
+                                        }`}
                                     disabled={uploading}
                                 >
                                     {uf}
@@ -326,10 +333,10 @@ const AdminAreas: React.FC = () => {
                             <span>Processando arquivo...</span>
                             <span>{progress}%</span>
                         </div>
-                        <div className="w-full bg-[#0d141c] rounded-full h-3 border border-slate-700 overflow-hidden">
+                        <div className="w-full bg-slate-900 rounded-full h-3 border border-slate-700 overflow-hidden">
                             <div
                                 className="bg-green-500 h-3 rounded-full transition-all duration-300 ease-out"
-                                style={{ width: `${progress}% ` }}
+                                style={{ width: `${progress}%` }}
                             ></div>
                         </div>
                         <p className="text-center text-xs text-slate-500 mt-2 animate-pulse">Não feche a página enquanto a importação estiver rodando.</p>
@@ -339,7 +346,7 @@ const AdminAreas: React.FC = () => {
 
             {/* --- LISTAGEM --- */}
             <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between bg-[#192633] p-4 rounded-xl border border-white/10">
+                <div className="flex items-center justify-between bg-background-paper-dark p-4 rounded-xl border border-white/10">
                     <div className="flex items-center gap-2 w-full max-w-md">
                         <span className="material-symbols-outlined text-slate-400">filter_list</span>
                         <input
@@ -357,10 +364,10 @@ const AdminAreas: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-[#192633] rounded-xl border border-white/10 overflow-hidden flex flex-col">
+                <div className="bg-background-paper-dark rounded-xl border border-white/10 overflow-hidden flex flex-col">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-slate-400 min-w-[600px]">
-                            <thead className="bg-[#0d141c] text-white uppercase">
+                            <thead className="bg-slate-900 text-white uppercase">
                                 <tr>
                                     <th className="p-4">Provedor</th>
                                     <th className="p-4">UFs</th>
@@ -374,7 +381,7 @@ const AdminAreas: React.FC = () => {
                                 ) : areas.map(area => (
                                     <tr key={area.id} className="hover:bg-white/5 transition-colors">
                                         <td className="p-4 font-bold text-white flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-[#0096C7]"></span>
+                                            <span className="w-2 h-2 rounded-full bg-primary"></span>
                                             {area.provider_name}
                                         </td>
                                         <td className="p-4 font-medium text-white max-w-[150px] truncate" title={area.uf}>
@@ -397,7 +404,7 @@ const AdminAreas: React.FC = () => {
                     </div>
 
                     {totalCount > 0 && (
-                        <div className="p-4 border-t border-white/10 flex items-center justify-between bg-[#0d141c]">
+                        <div className="p-4 border-t border-white/10 flex items-center justify-between bg-slate-900">
                             <button
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}

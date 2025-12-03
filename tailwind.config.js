@@ -8,48 +8,51 @@ export default {
   theme: {
     extend: {
       colors: {
-        // --- NOVA PALETA ENCANTADORA E CONVERSIVA ---
+        // --- NOVA PALETA (Roxo, Laranja, Azul Pastel) ---
 
-        // Cor primária: Turquesa vibrante (confiança + energia)
+        // Roxo / Lilás predominante (Topo, botões, destaques)
         primary: {
-          DEFAULT: "#06b6d4",  // Turquoise cyan
-          hover: "#0891b2",
-          light: "#cffafe",
+          DEFAULT: "#6C3AFF",
+          hover: "#4B1DFF",
+          dark: "#5A44DC",
+          light: "#8A63FF", // Gerado para variantes mais claras
         },
 
-        // Coral emocional para acentos e botões
+        // Laranja vibrante (Botões Assinar, destaques auxiliares)
         accent: {
-          DEFAULT: "#fb7185", // Soft coral red
-          hover: "#f43f5e",
-          light: "#ffe4e6",
+          DEFAULT: "#FF6A00",
+          hover: "#E65F00",
+          light: "#FF7A18",
         },
 
-        // Amarelo mel otimista
-        highlight: {
-          DEFAULT: "#facc15",
-          hover: "#eab308",
-          light: "#fef9c3",
+        // Azul claro / pastel (Fundos e áreas secundárias)
+        secondary: {
+          DEFAULT: "#E7F1FF",
+          hover: "#D0E1FF",
         },
 
-        // Verde Fresh confiança humana
+        // Mantendo funcionais
         success: {
           DEFAULT: "#34d399",
           hover: "#059669",
           light: "#d1fae5",
         },
 
-        // Fundo moderno e suave (menos cinzão – mais acolhedor)
+        // Fundo
         background: {
-          light: "#fdfdfd",
+          light: "#E7F1FF", // Azul claro para fundos gerais
+          main: "#FFFFFF",  // Branco predominante
           dark: "#1e1e2e",
           paper: "#ffffff",
           "paper-dark": "#0f172a",
         },
 
+        // Tipografia (Cinza neutro)
         text: {
-          main: "#334155",
-          muted: "#64748b",
-          inverted: "#f1f5f9",
+          main: "#666666",
+          muted: "#A9A9A9",
+          inverted: "#ffffff",
+          dark: "#333333", // Para alto contraste em fundos claros
         },
       },
 
@@ -58,9 +61,9 @@ export default {
       },
 
       boxShadow: {
-        // Luz suave colorida em vez de dourado pesado
-        glow: "0px 4px 18px rgba(16, 185, 129, 0.35)",
-        coral: "0px 4px 18px rgba(251, 113, 133, 0.35)",
+        // Luz suave colorida
+        glow: "0px 4px 18px rgba(108, 58, 255, 0.35)", // Roxo
+        orange: "0px 4px 18px rgba(255, 106, 0, 0.35)", // Laranja
       },
     },
   },

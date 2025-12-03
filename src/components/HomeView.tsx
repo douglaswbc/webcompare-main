@@ -25,7 +25,7 @@ const HomeView: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-slate-50 dark:bg-slate-900 font-sans">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark font-sans">
 
       <Header />
 
@@ -35,8 +35,8 @@ const HomeView: React.FC = () => {
 
       <div className="py-20 px-4 max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-2">Como o WebCompare funciona?</h2>
-          <p className="text-slate-500">Contrate sua nova internet em 3 passos simples.</p>
+          <h2 className="text-3xl font-black text-text-dark dark:text-text-inverted mb-2">Como o WebCompare funciona?</h2>
+          <p className="text-text-main">Contrate sua nova internet em 3 passos simples.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -45,12 +45,12 @@ const HomeView: React.FC = () => {
             { icon: 'compare_arrows', title: '2. Comparação', desc: 'Filtre por preço, velocidade e benefícios. Veja lado a lado as melhores opções.' },
             { icon: 'savings', title: '3. Economia', desc: 'Escolha o plano ideal e finalize o pedido diretamente pelo WhatsApp com suporte.' }
           ].map((step, idx) => (
-            <div key={idx} className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-xl transition-shadow text-center group">
-              <div className="w-16 h-16 bg-[#CAF0F8] dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-3xl text-[#0096C7]">{step.icon}</span>
+            <div key={idx} className="bg-background-paper dark:bg-background-paper-dark p-8 rounded-2xl shadow-sm border border-background-light dark:border-background-dark hover:shadow-xl transition-shadow text-center group">
+              <div className="w-16 h-16 bg-secondary dark:bg-background-dark rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-3xl text-primary">{step.icon}</span>
               </div>
-              <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-3">{step.title}</h3>
-              <p className="text-slate-500 leading-relaxed">{step.desc}</p>
+              <h3 className="text-xl font-bold text-text-dark dark:text-text-inverted mb-3">{step.title}</h3>
+              <p className="text-text-main leading-relaxed">{step.desc}</p>
             </div>
           ))}
         </div>
