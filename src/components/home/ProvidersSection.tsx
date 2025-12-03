@@ -17,7 +17,7 @@ const ProvidersSection: React.FC<ProvidersSectionProps> = ({ providers }) => {
                                 key={p.id}
                                 src={p.logo_url}
                                 alt={p.name}
-                                className="h-12 md:h-20 w-auto object-contain grayscale hover:grayscale-0 transition-all duration-500 hover:scale-110 opacity-90 hover:opacity-100"
+                                className="h-12 md:h-20 w-auto object-contain transition-transform duration-300 hover:scale-110"
                             />
                         ) : null
                     ))
