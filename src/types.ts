@@ -41,7 +41,7 @@ export interface Plan {
   providers?: Provider; // Joined do Supabase
   benefits?: Benefit[];
 
-  plan_coverage?: PlanCoverage[];
+
 }
 
 export interface UserAddress {
