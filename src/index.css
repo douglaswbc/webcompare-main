@@ -1,4 +1,75 @@
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+/* TAILWIND v4 CONFIGURATION
+  Aqui definimos o tema diretamente no CSS.
+  Isso substitui a necessidade do tailwind.config.js para cores básicas.
+*/
+
+@theme {
+  /* --- PALETA DE CORES --- */
+  
+  /* Roxo (Principal) */
+  --color-primary: #6C3AFF;
+  --color-primary-hover: #4B1DFF;
+  --color-primary-dark: #5A44DC;
+  --color-primary-light: #8A63FF;
+
+  /* Laranja (Ação/Destaque) */
+  --color-accent: #FF6A00;
+  --color-accent-hover: #E65F00;
+  --color-accent-light: #FF7A18;
+
+  /* Azul Pastel (Secundário) */
+  --color-secondary: #E7F1FF;
+  --color-secondary-hover: #D0E1FF;
+
+  /* Status */
+  --color-success: #34d399;
+  --color-state-success: #34d399;
+  --color-state-error: #f87171;
+  --color-state-warning: #fbbf24;
+  --color-state-info: #60a5fa;
+
+  /* Fundos (Modo Claro e Escuro) */
+  --color-background-light: #E7F1FF;      /* Fundo Geral Claro */
+  --color-background-main: #FFFFFF;       
+  --color-background-dark: #0f172a;       /* Slate 900 (Fundo Geral Escuro) */
+  --color-background-paper: #ffffff;      /* Cards Claros */
+  --color-background-paper-dark: #1e293b; /* Slate 800 (Cards Escuros) */
+
+  /* Tipografia */
+  --color-text-main: #64748b;             /* Slate 500 */
+  --color-text-muted: #94a3b8;            /* Slate 400 */
+  --color-text-inverted: #ffffff;         /* Branco puro */
+  --color-text-dark: #1e293b;             /* Slate 800 (Texto escuro no light mode) */
+
+  /* --- FONTES --- */
+  --font-display: "Inter", "Poppins", sans-serif;
+
+  /* --- SOMBRAS (Glow Effects) --- */
+  --shadow-glow: 0px 4px 18px rgba(108, 58, 255, 0.35);
+  --shadow-orange: 0px 4px 18px rgba(255, 106, 0, 0.35);
+}
+
+/* Estilos Globais e Reset 
+*/
+@layer base {
+  body {
+    @apply font-display antialiased;
+  }
+  
+  /* Scrollbar Personalizada para combinar com o tema */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-background-dark;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-background-paper-dark rounded-full border border-white/10;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary;
+  }
+}

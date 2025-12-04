@@ -191,7 +191,7 @@ const CompareView: React.FC = () => {
                     onClick={() => handleSelectPlan(plan)}
                     className="flex-1 max-w-[180px] py-3 text-text-inverted font-bold rounded-xl bg-primary hover:bg-primary-hover shadow-lg shadow-glow transition-all hover:scale-105 flex items-center justify-center gap-2"
                   >
-                    Detalhes
+                    Contratar Agora!
                     <span className="material-symbols-outlined text-lg">arrow_forward</span>
                   </button>
                 </div>

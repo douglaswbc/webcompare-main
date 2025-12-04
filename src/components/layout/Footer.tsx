@@ -8,7 +8,7 @@ const Footer: React.FC = () => {
                 <div className="col-span-1 md:col-span-2">
                     <div className="flex items-center gap-2 text-text-inverted mb-4 justify-center md:justify-start">
                         <span className="material-symbols-outlined text-primary">wifi_find</span>
-                        <span className="font-bold text-xl">WebCompare</span>
+                        <span className="font-bold text-xl">Encontre seu Plano</span>
                     </div>
                     <p className="text-sm max-w-xs mx-auto md:mx-0">
                         Ajudamos brasileiros a encontrarem a melhor conexão de internet desde 2023. Transparência e economia em primeiro lugar.
@@ -32,7 +32,7 @@ const Footer: React.FC = () => {
                 </div>
             </div>
             <div className="text-center mt-12 pt-8 border-t border-background-dark text-xs">
-                © 2023 WebCompare Tecnologia. Todos os direitos reservados.
+                © 2023 Encontre seu Plano Tecnologia. Todos os direitos reservados.
             </div>
         </footer>
     );

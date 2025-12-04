@@ -10,7 +10,7 @@ const Header: React.FC = () => {
         <div className="bg-primary p-2 rounded-lg">
           <span className="material-symbols-outlined text-2xl text-white">wifi_find</span>
         </div>
-        <h2 className="text-xl font-bold tracking-tight">WebCompare</h2>
+        <h2 className="text-xl font-bold tracking-tight">Encontre seu Plano</h2>
       </div>
       <button onClick={() => navigate('/artigos')} className="text-white hover:text-accent transition-colors drop-shadow-md">
         <span className="material-symbols-outlined text-3xl">menu</span>
