@@ -11,7 +11,7 @@ const FeaturesSection: React.FC = () => {
                         EXCLUSIVIDADE
                     </div>
                     <h2 className="text-3xl md:text-4xl font-black text-white mb-6 leading-tight">
-                        Por que usar o <span className="text-primary">WebCompare</span>?
+                        Por que usar o <span className="text-primary">Encontre seu Plano</span>?
                     </h2>
                     <ul className="space-y-4">
                         {[

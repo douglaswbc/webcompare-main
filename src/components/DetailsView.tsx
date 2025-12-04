@@ -47,7 +47,7 @@ const DetailsView: React.FC = () => {
             : '';
 
         const text = `Olá! Quero contratar *${plan.name}*.\nNome: ${formData.nome}\nCPF: ${formData.cpf}${addressTxt}`;
-        const url = `https://wa.me/559192294869?text=${encodeURIComponent(text)}`;
+        const url = `https://wa.me/5511943293639?text=${encodeURIComponent(text)}`;
 
         window.open(url, '_blank');
         setIsModalOpen(false);
@@ -62,7 +62,7 @@ const DetailsView: React.FC = () => {
             {/* Botão Voltar */}
             <button
                 onClick={() => navigate(-1)}
-                className="fixed top-4 left-4 z-20 w-12 h-12 rounded-full bg-background-paper dark:bg-background-paper-dark shadow-lg flex items-center justify-center text-text-dark dark:text-text-inverted hover:scale-110 transition-transform border border-background-light dark:border-background-dark"
+                className="fixed top-4 left-4 z-20 w-12 h-12 rounded-full bg-background-paper dark:bg-background-paper-dark shadow-lg flex items-center justify-center text-text-dark dark:text-text-inverted hover:scale-110 transition-transform border border-background-light dark:border-text-inverted/5"
             >
                 <span className="material-symbols-outlined">arrow_back</span>
             </button>
@@ -77,7 +77,7 @@ const DetailsView: React.FC = () => {
                 {/* Título sobre o banner */}
                 <div className="absolute bottom-6 left-6 right-6 z-10">
                     {plan.is_featured && (
-                        <span className="inline-flex items-center gap-1 bg-accent text-white text-[10px] uppercase font-bold px-3 py-1 rounded-full mb-3 shadow-sm tracking-wider">
+                        <span className="inline-flex items-center gap-1 bg-accent text-text-inverted text-[10px] uppercase font-bold px-3 py-1 rounded-full mb-3 shadow-sm tracking-wider">
                             <span className="material-symbols-outlined text-[14px]">star</span>
                             Premium
                         </span>
@@ -90,8 +90,8 @@ const DetailsView: React.FC = () => {
             {/* Conteúdo */}
             <div className="px-4 -mt-10 relative z-10 max-w-2xl mx-auto space-y-6">
                 {/* Card Velocidades */}
-                <div className="bg-background-paper dark:bg-background-paper-dark rounded-2xl p-6 shadow-xl border border-background-light dark:border-background-dark">
-                    <div className="grid grid-cols-3 gap-4 divide-x divide-background-light dark:divide-background-dark">
+                <div className="bg-background-paper dark:bg-background-paper-dark rounded-2xl p-6 shadow-xl border border-background-light dark:border-text-inverted/5">
+                    <div className="grid grid-cols-3 gap-4 divide-x divide-background-light dark:divide-text-inverted/5">
                         <div className="text-center">
                             <span className="block text-text-muted text-[10px] uppercase font-bold tracking-widest mb-1">Download</span>
                             <span className="text-primary font-bold text-2xl">{plan.download_speed}</span>
@@ -115,7 +115,7 @@ const DetailsView: React.FC = () => {
                     </h3>
                     <div className="space-y-3">
                         {plan.benefits?.map((b: any) => (
-                            <div key={b.id} className="flex items-center gap-4 p-4 bg-background-paper dark:bg-background-paper-dark rounded-xl border border-background-light dark:border-background-dark shadow-sm">
+                            <div key={b.id} className="flex items-center gap-4 p-4 bg-background-paper dark:bg-background-paper-dark rounded-xl border border-background-light dark:border-text-inverted/5 shadow-sm">
                                 <div className="w-10 h-10 rounded-full bg-secondary dark:bg-background-dark flex items-center justify-center shrink-0">
                                     <span className="material-symbols-outlined text-primary">{b.icon}</span>
                                 </div>
@@ -127,7 +127,7 @@ const DetailsView: React.FC = () => {
             </div>
 
             {/* Footer Fixo */}
-            <div className="fixed bottom-0 w-full p-4 bg-background-paper dark:bg-background-dark border-t border-background-light dark:border-background-dark shadow-[0_-5px_20px_rgba(0,0,0,0.1)] z-30">
+            <div className="fixed bottom-0 w-full p-4 bg-background-paper dark:bg-background-dark border-t border-background-light dark:border-text-inverted/5 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] z-30">
                 <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
                     <div>
                         <p className="text-xs text-text-muted uppercase font-bold">Total Mensal</p>
@@ -135,7 +135,7 @@ const DetailsView: React.FC = () => {
                     </div>
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-accent hover:bg-accent-hover text-white px-8 py-4 rounded-xl font-bold shadow-lg shadow-accent/30 transition-all hover:scale-105 flex items-center gap-2"
+                        className="bg-accent hover:bg-accent-hover text-text-inverted px-8 py-4 rounded-xl font-bold shadow-lg shadow-accent/30 transition-all hover:scale-105 flex items-center gap-2"
                     >
                         Assinar Agora
                         <span className="material-symbols-outlined">arrow_forward</span>
@@ -158,21 +158,21 @@ const DetailsView: React.FC = () => {
                             <input
                                 type="text"
                                 placeholder="Nome Completo"
-                                className="w-full p-4 rounded-xl bg-background-light dark:bg-background-dark text-text-dark dark:text-text-inverted border border-background-light dark:border-background-dark outline-none focus:border-primary"
+                                className="w-full p-4 rounded-xl bg-background-light dark:bg-background-dark text-text-dark dark:text-text-inverted border border-background-light dark:border-text-inverted/5 outline-none focus:border-primary"
                                 value={formData.nome}
                                 onChange={e => setFormData({ ...formData, nome: e.target.value })}
                             />
                             <input
                                 type="tel"
                                 placeholder="WhatsApp / Celular"
-                                className="w-full p-4 rounded-xl bg-background-light dark:bg-background-dark text-text-dark dark:text-text-inverted border border-background-light dark:border-background-dark outline-none focus:border-primary"
+                                className="w-full p-4 rounded-xl bg-background-light dark:bg-background-dark text-text-dark dark:text-text-inverted border border-background-light dark:border-text-inverted/5 outline-none focus:border-primary"
                                 value={formData.telefone}
                                 onChange={e => setFormData({ ...formData, telefone: e.target.value })}
                             />
                             <input
                                 type="text"
                                 placeholder="CPF (Opcional)"
-                                className="w-full p-4 rounded-xl bg-background-light dark:bg-background-dark text-text-dark dark:text-text-inverted border border-background-light dark:border-background-dark outline-none focus:border-primary"
+                                className="w-full p-4 rounded-xl bg-background-light dark:bg-background-dark text-text-dark dark:text-text-inverted border border-background-light dark:border-text-inverted/5 outline-none focus:border-primary"
                                 value={formData.cpf}
                                 onChange={e => setFormData({ ...formData, cpf: e.target.value })}
                             />
@@ -180,7 +180,7 @@ const DetailsView: React.FC = () => {
 
                         <button
                             onClick={handleSendWhatsApp}
-                            className="w-full mt-6 bg-[#25D366] hover:bg-[#1fa855] text-white font-bold py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
+                            className="w-full mt-6 bg-[#25D366] hover:bg-[#1fa855] text-text-inverted font-bold py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2"
                         >
                             Enviar no WhatsApp
                         </button>

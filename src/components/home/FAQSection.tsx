@@ -6,7 +6,7 @@ const FAQSection: React.FC = () => {
             <h2 className="text-2xl font-bold text-center text-text-dark dark:text-text-inverted mb-10">Dúvidas Frequentes</h2>
             <div className="space-y-4">
                 {[
-                    { q: 'O serviço do WebCompare é gratuito?', a: 'Sim! Você não paga nada para usar nosso comparador. Somos remunerados pelas operadoras quando você contrata um plano.' },
+                    { q: 'O serviço do Encontre seu Plano é gratuito?', a: 'Sim! Você não paga nada para usar nosso comparador. Somos remunerados pelas operadoras quando você contrata um plano.' },
                     { q: 'Os preços são os mesmos do site da operadora?', a: 'Geralmente são melhores. Temos acesso a ofertas exclusivas de canais digitais que nem sempre estão no televendas.' },
                     { q: 'Quanto tempo demora a instalação?', a: 'Depende da operadora e região, mas a média nacional é de 2 a 5 dias úteis após o agendamento.' }
                 ].map((faq, idx) => (

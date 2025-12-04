@@ -124,7 +124,7 @@ const AdminArticles: React.FC = () => {
             </h1>
 
             {/* Form Card */}
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6 mb-8 border border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-background-dark rounded-lg shadow p-6 mb-8 border border-slate-200 dark:border-slate-700">
                 <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-4">
                     {editingId ? 'Editar Artigo' : 'Novo Artigo'}
                 </h2>
@@ -225,7 +225,7 @@ const AdminArticles: React.FC = () => {
             </div>
 
             {/* List */}
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden border border-slate-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-background-dark rounded-lg shadow overflow-hidden border border-slate-200 dark:border-slate-700">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>

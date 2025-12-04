@@ -52,7 +52,7 @@ const LegalView: React.FC = () => {
                             // === CONTEÚDO DA POLÍTICA DE PRIVACIDADE ===
                             <>
                                 <p>
-                                    A sua privacidade é importante para nós. É política do <strong>WebCompare</strong> respeitar a sua privacidade em relação a qualquer informação sua que possamos coletar no site.
+                                    A sua privacidade é importante para nós. É política do <strong>Encontre seu Plano</strong> respeitar a sua privacidade em relação a qualquer informação sua que possamos coletar no site.
                                 </p>
 
                                 <h3>1. Coleta de Informações</h3>
@@ -79,7 +79,7 @@ const LegalView: React.FC = () => {
 
                                 <h3>3. Compromisso do Usuário</h3>
                                 <p>
-                                    O usuário se compromete a fazer uso adequado dos conteúdos e da informação que o WebCompare oferece no site e com caráter enunciativo, mas não limitativo:
+                                    O usuário se compromete a fazer uso adequado dos conteúdos e da informação que o Encontre seu Plano oferece no site e com caráter enunciativo, mas não limitativo:
                                 </p>
                                 <ul>
                                     <li>A) Não se envolver em atividades que sejam ilegais ou contrárias à boa fé a à ordem pública;</li>
@@ -96,12 +96,12 @@ const LegalView: React.FC = () => {
                             <>
                                 <h3>1. Termos</h3>
                                 <p>
-                                    Ao acessar o site <strong>WebCompare</strong>, você concorda em cumprir estes termos de serviço, todas as leis e regulamentos aplicáveis e concorda que é responsável pelo cumprimento de todas as leis locais aplicáveis. Se você não concordar com algum desses termos, está proibido de usar ou acessar este site.
+                                    Ao acessar o site <strong>Encontre seu Plano</strong>, você concorda em cumprir estes termos de serviço, todas as leis e regulamentos aplicáveis e concorda que é responsável pelo cumprimento de todas as leis locais aplicáveis. Se você não concordar com algum desses termos, está proibido de usar ou acessar este site.
                                 </p>
 
                                 <h3>2. Uso de Licença</h3>
                                 <p>
-                                    O WebCompare é uma ferramenta de comparação de planos de telecomunicações. É concedida permissão para baixar temporariamente uma cópia dos materiais (informações ou software) no site WebCompare, apenas para visualização transitória pessoal e não comercial.
+                                    O Encontre seu Plano é uma ferramenta de comparação de planos de telecomunicações. É concedida permissão para baixar temporariamente uma cópia dos materiais (informações ou software) no site Encontre seu Plano, apenas para visualização transitória pessoal e não comercial.
                                 </p>
 
                                 <h3>3. Isenção de responsabilidade</h3>
@@ -113,18 +113,18 @@ const LegalView: React.FC = () => {
                                         <strong>Cobertura:</strong> A verificação de cobertura via CEP/GPS é uma estimativa baseada em dados fornecidos pelas operadoras. A viabilidade técnica final só é confirmada no momento da visita técnica.
                                     </li>
                                     <li>
-                                        <strong>Vínculo:</strong> O WebCompare atua como intermediador de vendas e gerador de leads. Não somos o provedor de internet e não somos responsáveis pela qualidade do sinal, suporte técnico ou cobrança das faturas.
+                                        <strong>Vínculo:</strong> O Encontre seu Plano atua como intermediador de vendas e gerador de leads. Não somos o provedor de internet e não somos responsáveis pela qualidade do sinal, suporte técnico ou cobrança das faturas.
                                     </li>
                                 </ul>
 
                                 <h3>4. Limitações</h3>
                                 <p>
-                                    Em nenhum caso o WebCompare ou seus fornecedores serão responsáveis por quaisquer danos (incluindo, sem limitação, danos por perda de dados ou lucro ou devido a interrupção dos negócios) decorrentes do uso ou da incapacidade de usar os materiais em WebCompare.
+                                    Em nenhum caso o Encontre seu Plano ou seus fornecedores serão responsáveis por quaisquer danos (incluindo, sem limitação, danos por perda de dados ou lucro ou devido a interrupção dos negócios) decorrentes do uso ou da incapacidade de usar os materiais em Encontre seu Plano.
                                 </p>
 
                                 <h3>5. Modificações</h3>
                                 <p>
-                                    O WebCompare pode revisar estes termos de serviço do site a qualquer momento, sem aviso prévio. Ao usar este site, você concorda em ficar vinculado à versão atual desses termos de serviço.
+                                    O Encontre seu Plano pode revisar estes termos de serviço do site a qualquer momento, sem aviso prévio. Ao usar este site, você concorda em ficar vinculado à versão atual desses termos de serviço.
                                 </p>
 
                                 <h3>6. Lei aplicável</h3>

@@ -4,66 +4,72 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        // --- NOVA PALETA (Roxo, Laranja, Azul Pastel) ---
 
-        // Roxo / Lilás predominante (Topo, botões, destaques)
+        // 🔹 Cor institucional (títulos, CTA secundários, gradientes)
         primary: {
+          light: "#8A63FF",
           DEFAULT: "#6C3AFF",
           hover: "#4B1DFF",
           dark: "#5A44DC",
-          light: "#8A63FF", // Gerado para variantes mais claras
         },
 
-        // Laranja vibrante (Botões Assinar, destaques auxiliares)
+        // 🔹 Botões principais / ações
         accent: {
+          light: "#FF7A18",
           DEFAULT: "#FF6A00",
           hover: "#E65F00",
-          light: "#FF7A18",
+          dark: "#CC5200",
         },
 
-        // Azul claro / pastel (Fundos e áreas secundárias)
+        // 🔹 Fundos pastéis e áreas suaves
         secondary: {
           DEFAULT: "#E7F1FF",
           hover: "#D0E1FF",
         },
 
-        // Mantendo funcionais
+        // 🔹 Feedback sistêmico
         success: {
+          light: "#d1fae5",
           DEFAULT: "#34d399",
           hover: "#059669",
-          light: "#d1fae5",
         },
 
-        // Fundo
+        // 🔹 Estrutura do app
         background: {
-          light: "#E7F1FF", // Azul claro para fundos gerais
-          main: "#FFFFFF",  // Branco predominante
-          dark: "#1e1e2e",
+          main: "#FFFFFF",
+          light: "#F9FBFF",
+          section: "#E7F1FF",
+          dark: "#0f172a",
           paper: "#ffffff",
-          "paper-dark": "#0f172a",
+          "paper-dark": "#1e293b",
         },
 
-        // Tipografia (Cinza neutro)
+        // 🔹 Tipografia padronizada
         text: {
           main: "#666666",
           muted: "#A9A9A9",
+          dark: "#333333",
           inverted: "#ffffff",
-          dark: "#333333", // Para alto contraste em fundos claros
         },
+
+        // 🔹 Estados do sistema (error, warning, etc)
+        error: "#f87171",
+        warning: "#fbbf24",
+        info: "#60a5fa",
+        gold: "#fbbf24",
       },
 
       fontFamily: {
-        display: ["Inter", "Poppins", "sans-serif"], // Poppins dá mais leveza
+        display: ["Inter", "Poppins", "sans-serif"],
       },
 
       boxShadow: {
-        // Luz suave colorida
-        glow: "0px 4px 18px rgba(108, 58, 255, 0.35)", // Roxo
-        orange: "0px 4px 18px rgba(255, 106, 0, 0.35)", // Laranja
+        glow: "0 4px 18px rgba(108,58,255,0.35)",
+        orange: "0 4px 18px rgba(255,106,0,0.35)",
       },
     },
   },
