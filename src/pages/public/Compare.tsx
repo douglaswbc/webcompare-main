@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
 import { toast } from 'react-toastify';
-import { Plan, UserAddress } from '../types';
 
-const CompareView: React.FC = () => {
+// Tipos e Serviços
+import { Plan, UserAddress } from '../../types';
+import { planService } from '../../services/planService';
+
+const Compare: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Recupera dados passados pela navegação anterior (Home)
   const userAddress = location.state?.userAddress as UserAddress | undefined;
+  const coords = location.state?.coords; // { lat, lng }
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +21,7 @@ const CompareView: React.FC = () => {
     const fetchPlans = async () => {
       setLoading(true);
 
-      // Se não houver endereço, não busca nada
+      // Se não houver endereço, não busca nada e para o loading
       if (!userAddress) {
         setLoading(false);
         return;
@@ -26,53 +31,26 @@ const CompareView: React.FC = () => {
       const cleanCep = userAddress.cep.replace(/\D/g, '');
 
       try {
-        // --- 1. CHAMADA INTELIGENTE (RPC) ---
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_available_plans', {
-          user_cep: cleanCep,
-          user_lat: location.state?.coords?.lat || 0,
-          user_long: location.state?.coords?.lng || 0,
-          user_city: userAddress.localidade || '',
-          user_uf: userAddress.uf || ''
+        const foundPlans = await planService.getAvailablePlans({
+          cep: cleanCep,
+          city: userAddress.localidade || '',
+          uf: userAddress.uf || '',
+          lat: coords?.lat,
+          lng: coords?.lng
         });
 
-        if (rpcError) throw rpcError;
-
-        const foundPlans = rpcData as any[];
-
-        // Se a função não retornar nada
-        if (!foundPlans || foundPlans.length === 0) {
-          setPlans([]);
-          setLoading(false);
-          return;
-        }
-
-        // --- 2. ENRIQUECER OS DADOS ---
-        const planIds = foundPlans.map(p => p.id);
-
-        const { data: fullPlans, error: plansError } = await supabase
-          .from('plans')
-          .select(`
-                *,
-                providers ( id, name, type, logo_url ),
-                benefits ( id, text, icon )
-            `)
-          .in('id', planIds)
-          .eq('active', true);
-
-        if (plansError) throw plansError;
-
-        setPlans(fullPlans as any);
+        setPlans(foundPlans);
 
       } catch (error: any) {
         console.error('Erro na busca:', error);
-        toast.error('Erro ao buscar planos: ' + error.message);
+        toast.error('Não foi possível carregar os planos no momento.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchPlans();
-  }, [userAddress]);
+  }, [userAddress, coords]);
 
   const handleSelectPlan = (plan: Plan) => {
     navigate('/detalhes', { state: { plan, userAddress } });
@@ -103,7 +81,7 @@ const CompareView: React.FC = () => {
             <span className="block text-xs opacity-70">
               CEP: {userAddress.cep}
               {/* Indicador visual se a busca foi por cidade ou GPS */}
-              {!location.state?.coords && <span className="ml-2 text-accent font-bold">(Busca por Região)</span>}
+              {!coords && <span className="ml-2 text-accent font-bold">(Busca por Região)</span>}
             </span>
           </p>
         </div>
@@ -220,4 +198,4 @@ const CompareView: React.FC = () => {
   );
 };
 
-export default CompareView;
+export default Compare;

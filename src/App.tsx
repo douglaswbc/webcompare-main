@@ -1,24 +1,25 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Utilitários
+// Componentes Utilitários
 import AnalyticsTracker from './components/AnalyticsTracker';
 
-// Views
-import HomeView from './components/HomeView';
-import CompareView from './components/CompareView';
-import DetailsView from './components/DetailsView';
-import ArticlesView from './components/ArticlesView';
-import LegalView from './components/LegalView'; // <--- Importar
+// --- ROTAS PÚBLICAS (Importação Direta) ---
+import Home from './pages/public/Home';
+import Compare from './pages/public/Compare';
+import Details from './pages/public/Details';
+import Articles from './pages/public/Articles';
+import Legal from './pages/public/Legal';
 
-// Admin Imports
-import AdminLayout from './admin/AdminLayout';
-import AdminLeads from './admin/AdminLeads';
-import AdminAreas from './admin/AdminAreas';
-import AdminPlans from './admin/AdminPlans';
-import AdminArticles from './admin/AdminArticles';
+// --- ROTAS ADMIN (Lazy Loading para performance) ---
+// Isso faz o painel admin carregar só quando o usuário acessa "/admin"
+const AdminLayout = lazy(() => import('./pages/admin/Layout'));
+const Leads = lazy(() => import('./pages/admin/Leads'));
+const Areas = lazy(() => import('./pages/admin/Areas'));
+const Plans = lazy(() => import('./pages/admin/Plans'));
+const AdminArticles = lazy(() => import('./pages/admin/Articles'));
 
 const App: React.FC = () => {
   return (
@@ -39,27 +40,33 @@ const App: React.FC = () => {
         aria-label="Notificações do Sistema"
       />
 
-      <Routes>
-        {/* Rotas Públicas */}
-        <Route path="/" element={<HomeView />} />
-        <Route path="/comparar" element={<CompareView />} />
-        <Route path="/detalhes" element={<DetailsView />} />
-        <Route path="/artigos" element={<ArticlesView />} />
+      {/* Suspense envolve as rotas que carregam sob demanda */}
+      <Suspense fallback={
+        <div className="flex h-screen w-full items-center justify-center bg-slate-900 text-white">
+           <span className="material-symbols-outlined animate-spin text-4xl text-[#6C3AFF]">progress_activity</span>
+        </div>
+      }>
+        <Routes>
+          {/* Rotas Públicas */}
+          <Route path="/" element={<Home />} />
+          <Route path="/comparar" element={<Compare />} />
+          <Route path="/detalhes" element={<Details />} />
+          <Route path="/artigos" element={<Articles />} />
+          <Route path="/termos" element={<Legal />} />
+          <Route path="/privacidade" element={<Legal />} />
 
-        {/* Rotas Legais */}
-        <Route path="/termos" element={<LegalView />} />
-        <Route path="/privacidade" element={<LegalView />} />
+          {/* Rotas de Admin */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Leads />} />
+            <Route path="areas" element={<Areas />} />
+            <Route path="planos" element={<Plans />} />
+            <Route path="artigos" element={<AdminArticles />} />
+          </Route>
 
-        {/* Rotas de Admin */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminLeads />} />
-          <Route path="areas" element={<AdminAreas />} />
-          <Route path="planos" element={<AdminPlans />} />
-          <Route path="artigos" element={<AdminArticles />} />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Rota 404 / Redirecionamento */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 };

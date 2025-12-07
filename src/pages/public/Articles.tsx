@@ -1,23 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { Article } from '../../types';
+import { articleService } from '../../services/articleService';
 
-const ArticlesView: React.FC = () => {
+const Articles: React.FC = () => {
   const navigate = useNavigate();
-  const [articles, setArticles] = useState<any[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchArticles = async () => {
-      const { data } = await supabase.from('articles').select('*').order('created_at', { ascending: false });
-      if (data) setArticles(data);
-      setLoading(false);
+      try {
+        const data = await articleService.getAllArticles();
+        setArticles(data);
+      } catch (error) {
+        // Erro já logado no serviço
+      } finally {
+        setLoading(false);
+      }
     };
     fetchArticles();
   }, []);
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark font-sans">
+    <div className="min-h-screen bg-background-light dark:bg-background-dark font-sans transition-colors duration-300">
       {/* Header */}
       <div className="flex items-center bg-background-paper/90 dark:bg-background-paper-dark/90 backdrop-blur-md p-4 sticky top-0 z-10 border-b border-background-light dark:border-background-dark">
         <button
@@ -32,7 +38,10 @@ const ArticlesView: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="p-10 text-center text-text-main">Carregando artigos...</div>
+        <div className="p-10 text-center text-text-main flex flex-col items-center gap-2">
+            <span className="material-symbols-outlined animate-spin text-primary">progress_activity</span>
+            <span>Carregando artigos...</span>
+        </div>
       ) : (
         <div className="p-6 max-w-4xl mx-auto space-y-6">
           {articles.map((article) => (
@@ -45,15 +54,19 @@ const ArticlesView: React.FC = () => {
               )}
               <div className="p-6 flex-1">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xs text-primary font-bold uppercase">{article.category}</span>
+                  {/* Se category existir, mostra, senão usa um padrão ou esconde */}
+                  {article.category && (
+                    <span className="text-xs text-primary font-bold uppercase">{article.category}</span>
+                  )}
                 </div>
-                <h2 className="text-xl font-bold text-text-dark dark:text-text-inverted leading-tight">
+                <h2 className="text-xl font-bold text-text-dark dark:text-text-inverted leading-tight mb-2">
                   {article.title}
                 </h2>
-                <p className="text-text-dark dark:text-text-inverted/70 text-sm leading-relaxed">
-                  {article.summary}
+                <p className="text-text-dark dark:text-text-inverted/70 text-sm leading-relaxed mb-4">
+                  {/* Fallback: Se summary não existir, usa description */}
+                  {article.summary || article.description}
                 </p>
-                <div className="flex items-center gap-3 mt-2 text-xs text-text-main font-medium uppercase tracking-wide">
+                <div className="flex items-center gap-3 mt-auto text-xs text-text-main font-medium uppercase tracking-wide">
                   <span>{article.author}</span>
                   <span>•</span>
                   <span>{article.read_time} de leitura</span>
@@ -63,7 +76,10 @@ const ArticlesView: React.FC = () => {
           ))}
 
           {articles.length === 0 && (
-            <p className="text-center text-slate-500 mt-10">Nenhum artigo encontrado.</p>
+            <div className="text-center py-10 opacity-70">
+                <span className="material-symbols-outlined text-4xl mb-2">article</span>
+                <p>Nenhum artigo encontrado.</p>
+            </div>
           )}
         </div>
       )}
@@ -71,4 +87,4 @@ const ArticlesView: React.FC = () => {
   );
 };
 
-export default ArticlesView;
+export default Articles;

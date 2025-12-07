@@ -1,27 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
-import { Provider } from '../types';
+import { Provider } from '../../types'; // Caminho corrigido
+import { providerService } from '../../services/providerService'; // Novo serviço
 
-// Layout Components
-import Header from './layout/Header';
-import Footer from './layout/Footer';
+// Layout Components (Caminhos corrigidos para subir 2 níveis)
+import Header from '../../components/layout/Header';
+import Footer from '../../components/layout/Footer';
 
 // Home Section Components
-import HeroSection from './home/HeroSection';
-import ProvidersSection from './home/ProvidersSection';
-import FeaturesSection from './home/FeaturesSection';
-import FAQSection from './home/FAQSection';
+import HeroSection from '../../components/home/HeroSection';
+import ProvidersSection from '../../components/home/ProvidersSection';
+import FeaturesSection from '../../components/home/FeaturesSection';
+import FAQSection from '../../components/home/FAQSection';
 
-const HomeView: React.FC = () => {
-  // Logos
+const Home: React.FC = () => {
   const [providersList, setProvidersList] = useState<Provider[]>([]);
 
   useEffect(() => {
-    const fetchProviders = async () => {
-      const { data } = await supabase.from('providers').select('*').eq('active', true);
-      if (data) setProvidersList(data as any);
+    const loadData = async () => {
+      try {
+        const data = await providerService.getActiveProviders();
+        setProvidersList(data);
+      } catch (error) {
+        // Opcional: Adicionar um toast de erro aqui se desejar
+        console.error(error); 
+      }
     };
-    fetchProviders();
+    loadData();
   }, []);
 
   return (
@@ -33,6 +37,7 @@ const HomeView: React.FC = () => {
 
       <ProvidersSection providers={providersList} />
 
+      {/* Seção "Como Funciona" (Mantida hardcoded por enquanto pois é estática) */}
       <div className="py-24 px-4 max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <span className="text-primary font-bold text-sm uppercase tracking-widest mb-2 block">Simplicidade</span>
@@ -95,4 +100,4 @@ const HomeView: React.FC = () => {
   );
 };
 
-export default HomeView;
+export default Home;

@@ -3,11 +3,7 @@ export interface Provider {
   name: string;
   type: string;
   logo_url: string;
-}
-
-export interface PlanCoverage {
-  uf: string;
-  city: string | null;
+  active?: boolean;
 }
 
 export interface Benefit {
@@ -19,14 +15,15 @@ export interface Benefit {
 export interface Plan {
   id: string;
   name: string;
-  download_speed: string; // Mapeado de snake_case do DB
+  download_speed: string;
   upload_speed: string;
   price: number;
   period: string;
   subtitle: string;
   banner_image: string;
-
-  // Badge Info (opcionais)
+  
+  // Badge Info
+  is_featured?: boolean;
   badge_text?: string;
   badge_icon?: string;
   badge_color_class?: string;
@@ -36,13 +33,12 @@ export interface Plan {
   connection_type: string;
   data_limit: string;
   contract_text: string;
+  active?: boolean;
+  provider_id?: string;
 
-  // Relacionamentos
-  providers?: Provider; // Joined do Supabase
+  // Relacionamentos (Joined)
+  providers?: Provider; 
   benefits?: Benefit[];
-
-  // UI Flags
-  is_featured?: boolean;
 }
 
 export interface UserAddress {
@@ -59,4 +55,36 @@ export interface UserPersonalData {
   telefone: string;
   cpf: string;
   rg: string;
+}
+
+export interface Article {
+  id: string;
+  created_at: string;
+  title: string;
+  description: string;
+  image_url: string;
+  author: string;
+  read_time: string;
+}
+
+export interface Lead {
+  id: string;
+  created_at: string;
+  name: string;
+  phone: string;
+  cpf?: string;
+  rg?: string;
+  plan_id: string;
+  address_json?: {
+    logradouro?: string;
+    numero?: string;
+    bairro?: string;
+    localidade?: string;
+    uf?: string;
+    cep?: string;
+  };
+  // Propriedade vinda do Join
+  plans?: {
+    name: string;
+  };
 }

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const LegalView: React.FC = () => {
+const Legal: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const isPrivacy = location.pathname === '/privacidade';
@@ -14,7 +14,7 @@ const LegalView: React.FC = () => {
     }, [location]);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans text-slate-700 dark:text-slate-300">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans text-slate-700 dark:text-slate-300 transition-colors duration-300">
 
             {/* Header Simplificado */}
             <div className="sticky top-0 z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
@@ -140,4 +140,4 @@ const LegalView: React.FC = () => {
     );
 };
 
-export default LegalView;
+export default Legal;

@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
 import { toast } from 'react-toastify';
+import { Lead } from '../../types';
+import { leadService } from '../../services/leadService';
 
-const AdminLeads: React.FC = () => {
-  const [leads, setLeads] = useState<any[]>([]);
+const Leads: React.FC = () => {
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  // Paginação e Filtros
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [filterText, setFilterText] = useState('');
@@ -13,17 +16,20 @@ const AdminLeads: React.FC = () => {
 
   const ITEMS_PER_PAGE = 10;
 
+  // Carrega a lista de nomes de planos para o filtro (apenas uma vez)
   useEffect(() => {
-    const fetchPlanNames = async () => {
-      const { data } = await supabase.from('plans').select('name').order('name');
-      if (data) {
-        const uniquePlans = Array.from(new Set(data.map((p: any) => p.name)));
-        setAvailablePlans(uniquePlans as string[]);
-      }
+    const loadFilters = async () => {
+        try {
+            const plans = await leadService.getPlanNames();
+            setAvailablePlans(plans);
+        } catch (error) {
+            console.error('Erro ao carregar filtros', error);
+        }
     };
-    fetchPlanNames();
+    loadFilters();
   }, []);
 
+  // Carrega os leads sempre que mudar página ou filtros
   useEffect(() => {
     fetchLeads();
   }, [currentPage, filterText, filterPlan]);
@@ -31,22 +37,17 @@ const AdminLeads: React.FC = () => {
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      let query = supabase.from('leads').select('*, plans!inner(name)', { count: 'exact' });
-
-      if (filterText) query = query.ilike('name', `%${filterText}%`);
-      if (filterPlan) query = query.eq('plans.name', filterPlan);
-
-      const from = (currentPage - 1) * ITEMS_PER_PAGE;
-      const to = from + ITEMS_PER_PAGE - 1;
-
-      const { data, count, error } = await query.order('created_at', { ascending: false }).range(from, to);
-
-      if (error) throw error;
-      setLeads(data || []);
-      setTotalCount(count || 0);
+      const { data, count } = await leadService.getLeads({
+          page: currentPage,
+          pageSize: ITEMS_PER_PAGE,
+          filterText,
+          filterPlan
+      });
+      
+      setLeads(data);
+      setTotalCount(count);
     } catch (error: any) {
-      console.error(error);
-      toast.error('Erro: ' + error.message);
+      toast.error('Erro ao carregar leads: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -54,7 +55,9 @@ const AdminLeads: React.FC = () => {
 
   const handleExportCSV = () => {
     if (leads.length === 0) return toast.warn('Sem dados para exportar.');
+    
     const headers = ['Data', 'Nome', 'Telefone', 'CPF', 'Interesse', 'Endereço', 'Cidade', 'Estado'];
+    
     const rows = leads.map(lead => [
       new Date(lead.created_at).toLocaleDateString(),
       `"${lead.name}"`,
@@ -65,9 +68,11 @@ const AdminLeads: React.FC = () => {
       `"${lead.address_json?.localidade || ''}"`,
       `"${lead.address_json?.uf || ''}"`
     ]);
+
     const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
+    
     const link = document.createElement('a');
     link.href = url;
     link.download = `leads_${new Date().toISOString().slice(0, 10)}.csv`;
@@ -75,6 +80,17 @@ const AdminLeads: React.FC = () => {
   };
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+  // Handlers para resetar paginação ao filtrar
+  const handleTextFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFilterText(e.target.value);
+      setCurrentPage(1);
+  };
+
+  const handlePlanFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setFilterPlan(e.target.value);
+      setCurrentPage(1);
+  };
 
   return (
     <div>
@@ -98,7 +114,7 @@ const AdminLeads: React.FC = () => {
               placeholder="Buscar por Nome..."
               className="bg-transparent text-text-inverted w-full outline-none placeholder:text-text-muted"
               value={filterText}
-              onChange={(e) => { setFilterText(e.target.value); setCurrentPage(1); }}
+              onChange={handleTextFilter}
             />
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto flex-1 bg-background-dark p-3 rounded-lg border border-white/5">
@@ -106,7 +122,7 @@ const AdminLeads: React.FC = () => {
             <select
               className="bg-transparent text-text-inverted w-full outline-none cursor-pointer [&>option]:bg-background-dark"
               value={filterPlan}
-              onChange={(e) => { setFilterPlan(e.target.value); setCurrentPage(1); }}
+              onChange={handlePlanFilter}
             >
               <option value="">Todos os Planos</option>
               {availablePlans.map(planName => (
@@ -201,4 +217,4 @@ const AdminLeads: React.FC = () => {
   );
 };
 
-export default AdminLeads;
+export default Leads;

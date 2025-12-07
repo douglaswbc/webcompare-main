@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { supabase } from '../supabaseClient';
-import { Plan, UserAddress, UserPersonalData } from '../types';
 
-const DetailsView: React.FC = () => {
+// Imports corrigidos para a nova estrutura
+import { Plan, UserAddress, UserPersonalData } from '../../types';
+import { leadService } from '../../services/leadService';
+
+const Details: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    
+    // Tipagem segura dos dados vindos da navegação
     const plan = location.state?.plan as Plan | undefined;
     const userAddress = location.state?.userAddress as UserAddress | undefined;
 
@@ -15,6 +19,7 @@ const DetailsView: React.FC = () => {
         nome: '', telefone: '', cpf: '', rg: ''
     });
 
+    // Se não tiver plano selecionado, volta pra home
     useEffect(() => {
         if (!plan) navigate('/');
     }, [plan, navigate]);
@@ -28,32 +33,33 @@ const DetailsView: React.FC = () => {
         }
 
         try {
-            await supabase.from('leads').insert([{
+            // Usa o serviço desacoplado para salvar o lead
+            await leadService.createLead({
                 name: formData.nome,
                 phone: formData.telefone,
                 cpf: formData.cpf,
                 rg: formData.rg,
                 plan_id: plan.id,
                 address_json: userAddress || {}
-            }]);
+            });
+            
             toast.success('Redirecionando para WhatsApp...');
+            
+            // Lógica de construção da URL do WhatsApp
+            const addressTxt = userAddress
+                ? `\nEndereço: ${userAddress.logradouro}, ${userAddress.numero}`
+                : '';
+
+            const text = `Olá! Quero contratar *${plan.name}*.\nNome: ${formData.nome}\nCPF: ${formData.cpf}${addressTxt}`;
+            const url = `https://wa.me/559192294869?text=${encodeURIComponent(text)}`;
+
+            window.open(url, '_blank');
+            setIsModalOpen(false);
+
         } catch (err) {
-            console.error(err);
+            toast.error('Erro ao processar solicitação. Tente novamente.');
         }
-
-        const addressTxt = userAddress
-            ? `\nEndereço: ${userAddress.logradouro}, ${userAddress.numero}`
-            : '';
-
-        const text = `Olá! Quero contratar *${plan.name}*.\nNome: ${formData.nome}\nCPF: ${formData.cpf}${addressTxt}`;
-        const url = `https://wa.me/559192294869?text=${encodeURIComponent(text)}`;
-
-        window.open(url, '_blank');
-        setIsModalOpen(false);
     };
-
-    const formatPrice = (val: number) =>
-        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
     return (
         <div className="min-h-screen bg-background-light dark:bg-background-dark pb-32 font-sans transition-colors duration-300">
@@ -242,4 +248,4 @@ const DetailsView: React.FC = () => {
     );
 };
 
-export default DetailsView;
+export default Details;

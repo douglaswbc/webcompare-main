@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
 import { toast } from 'react-toastify';
 import JSZip from 'jszip';
 import * as toGeoJSON from '@mapbox/togeojson';
+import { coverageService } from '../../services/coverageService';
 
 // Lista de Estados para o Dropdown
 const ESTADOS = [
@@ -11,11 +10,11 @@ const ESTADOS = [
     'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
-const AdminAreas: React.FC = () => {
+const Areas: React.FC = () => {
     // Estados de Upload
     const [providerName, setProviderName] = useState('');
     const [areaName, setAreaName] = useState('');
-    const [selectedUfs, setSelectedUfs] = useState<string[]>([]); // <--- NOVO: Array de UFs
+    const [selectedUfs, setSelectedUfs] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
 
@@ -32,41 +31,28 @@ const AdminAreas: React.FC = () => {
     const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
-        fetchProviders();
+        const loadProviders = async () => {
+            const data = await coverageService.getProviderNames();
+            setProviders(data);
+        };
+        loadProviders();
+    }, []);
+
+    useEffect(() => {
         fetchAreas();
     }, [currentPage, filterProvider]);
-
-    const fetchProviders = async () => {
-        const { data } = await supabase.from('providers').select('id, name').order('name');
-        if (data) setProviders(data);
-    };
 
     const fetchAreas = async () => {
         setLoadingList(true);
         try {
-            let query = supabase
-                .from('coverage_areas')
-                .select('id, provider_name, area_name, uf', { count: 'exact' });
-
-            if (filterProvider) {
-                query = query.ilike('provider_name', '%' + filterProvider + '%');
-            }
-
-            const from = (currentPage - 1) * ITEMS_PER_PAGE;
-            const to = from + ITEMS_PER_PAGE - 1;
-
-            const { data, count, error } = await query
-                .order('provider_name', { ascending: true })
-                .order('area_name', { ascending: true })
-                .range(from, to);
-
-            if (error) throw error;
-
-            setAreas(data || []);
-            setTotalCount(count || 0);
-
+            const { data, count } = await coverageService.getAreas({
+                page: currentPage,
+                pageSize: ITEMS_PER_PAGE,
+                filterProvider
+            });
+            setAreas(data);
+            setTotalCount(count);
         } catch (error) {
-            console.error(error);
             toast.error('Erro ao carregar lista de áreas.');
         } finally {
             setLoadingList(false);
@@ -75,33 +61,22 @@ const AdminAreas: React.FC = () => {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Tem certeza?')) return;
-        const { error } = await supabase.from('coverage_areas').delete().eq('id', id);
-        if (error) toast.error('Erro ao excluir.');
-        else {
+        try {
+            await coverageService.deleteArea(id);
             toast.success('Área excluída.');
             fetchAreas();
+        } catch (error) {
+            toast.error('Erro ao excluir.');
         }
     };
 
     const handleClearProviderAreas = async () => {
-        if (!providerName) {
-            toast.warn('Selecione um provedor primeiro.');
-            return;
-        }
-
-        if (!confirm(`ATENÇÃO: Isso apagará TODAS as áreas cadastradas para "${providerName}".Deseja continuar ? `)) {
-            return;
-        }
+        if (!providerName) return toast.warn('Selecione um provedor primeiro.');
+        if (!confirm(`ATENÇÃO: Isso apagará TODAS as áreas de "${providerName}". Deseja continuar?`)) return;
 
         setUploading(true);
         try {
-            const { error } = await supabase
-                .from('coverage_areas')
-                .delete()
-                .eq('provider_name', providerName);
-
-            if (error) throw error;
-
+            await coverageService.clearProviderAreas(providerName);
             toast.success(`Todas as áreas de ${providerName} foram removidas.`);
             fetchAreas();
         } catch (error: any) {
@@ -111,6 +86,7 @@ const AdminAreas: React.FC = () => {
         }
     };
 
+    // Remove a dimensão Z (altitude) das coordenadas se existir
     const removeZDimension = (coords: any[]): any[] => {
         return coords.map((point: any) => {
             if (Array.isArray(point[0])) return removeZDimension(point);
@@ -128,20 +104,17 @@ const AdminAreas: React.FC = () => {
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        // Validação inclui UFs agora
         if (!file || !providerName || selectedUfs.length === 0) {
             toast.warn('Selecione Provedor, pelo menos um UF e o Arquivo.');
             return;
         }
 
-        const ufsString = selectedUfs.join(','); // Converte array para string "SP,RJ,MG"
-
+        const ufsString = selectedUfs.join(',');
         setUploading(true);
         setProgress(0);
 
         try {
             let kmlText = '';
-
             if (file.name.endsWith('.kmz')) {
                 const zip = await JSZip.loadAsync(file);
                 const kmlFile = Object.values(zip.files).find(f => f.name.endsWith('.kml'));
@@ -159,13 +132,8 @@ const AdminAreas: React.FC = () => {
             let errors = 0;
             let skipped = 0;
 
-            const { data: existingAreas } = await supabase
-                .from('coverage_areas')
-                .select('area_name')
-                .eq('provider_name', providerName)
-                .eq('uf', ufsString); // Verifica duplicidade com a mesma combinação de UFs
-
-            const existingNames = new Set(existingAreas?.map(a => a.area_name));
+            // Busca nomes existentes para evitar duplicidade
+            const existingNames = await coverageService.checkExistingAreas(providerName, ufsString);
 
             if (geoJson.type === 'FeatureCollection') {
                 const totalFeatures = geoJson.features.length;
@@ -173,8 +141,7 @@ const AdminAreas: React.FC = () => {
 
                 for (const feature of geoJson.features) {
                     processed++;
-                    const currentProgress = Math.round((processed / totalFeatures) * 100);
-                    setProgress(currentProgress);
+                    setProgress(Math.round((processed / totalFeatures) * 100));
 
                     const featureName = areaName || feature.properties?.name || file.name;
 
@@ -184,13 +151,10 @@ const AdminAreas: React.FC = () => {
                     }
 
                     if (feature.geometry) {
-                        let finalGeometry = feature.geometry;
+                        let finalGeometry: any = feature.geometry;
 
-                        if (feature.geometry.type === 'Polygon') {
-                            finalGeometry = {
-                                type: 'MultiPolygon',
-                                coordinates: [feature.geometry.coordinates]
-                            };
+                        if (finalGeometry.type === 'Polygon') {
+                            finalGeometry = { type: 'MultiPolygon', coordinates: [finalGeometry.coordinates] };
                         }
 
                         if (finalGeometry.type === 'MultiPolygon') {
@@ -198,41 +162,37 @@ const AdminAreas: React.FC = () => {
                         }
 
                         if (finalGeometry.type === 'MultiPolygon' || finalGeometry.type === 'Polygon') {
-                            const { error } = await supabase.from('coverage_areas').insert({
-                                provider_name: providerName,
-                                area_name: featureName,
-                                uf: ufsString, // <--- INSERINDO A STRING DE UFS
-                                geom: finalGeometry
-                            });
-
-                            if (error) {
-                                console.error('Erro Supabase:', error);
-                                errors++;
-                            } else {
+                            try {
+                                await coverageService.createArea({
+                                    provider_name: providerName,
+                                    area_name: featureName,
+                                    uf: ufsString,
+                                    geom: finalGeometry
+                                });
                                 count++;
                                 existingNames.add(featureName);
+                            } catch (err) {
+                                errors++;
                             }
                         }
                     }
+                    // Pausa para não travar a UI
                     if (processed % 10 === 0) await new Promise(r => setTimeout(r, 0));
                 }
             }
 
             if (count > 0) {
-                toast.success(`${count} áreas importadas para ${ufsString} !(${skipped} duplicadas)`);
+                toast.success(`${count} áreas importadas para ${ufsString}! (${skipped} duplicadas)`);
                 fetchAreas();
                 setAreaName('');
-                setSelectedUfs([]); // Limpa seleção
+                setSelectedUfs([]);
             } else if (skipped > 0 && count === 0) {
-                toast.warn('Todas as áreas já existiam para estes estados.');
-            } else if (errors > 0) {
-                toast.error(`Falha ao importar ${errors} polígonos.`);
+                toast.warn('Todas as áreas já existiam.');
             } else {
-                toast.warn('Nenhum polígono válido encontrado.');
+                toast.warn('Nenhum polígono válido importado.');
             }
 
         } catch (error: any) {
-            console.error(error);
             toast.error('Erro ao processar: ' + error.message);
         } finally {
             setUploading(false);
@@ -339,7 +299,6 @@ const AdminAreas: React.FC = () => {
                                 style={{ width: `${progress}%` }}
                             ></div>
                         </div>
-                        <p className="text-center text-xs text-slate-500 mt-2 animate-pulse">Não feche a página enquanto a importação estiver rodando.</p>
                     </div>
                 )}
             </div>
@@ -432,4 +391,4 @@ const AdminAreas: React.FC = () => {
     );
 };
 
-export default AdminAreas;
+export default Areas;
