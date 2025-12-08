@@ -9,7 +9,7 @@ import { leadService } from '../../services/leadService';
 const Details: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     // Tipagem segura dos dados vindos da navegação
     const plan = location.state?.plan as Plan | undefined;
     const userAddress = location.state?.userAddress as UserAddress | undefined;
@@ -42,16 +42,16 @@ const Details: React.FC = () => {
                 plan_id: plan.id,
                 address_json: userAddress || {}
             });
-            
+
             toast.success('Redirecionando para WhatsApp...');
-            
+
             // Lógica de construção da URL do WhatsApp
             const addressTxt = userAddress
                 ? `\nEndereço: ${userAddress.logradouro}, ${userAddress.numero}`
                 : '';
 
             const text = `Olá! Quero contratar *${plan.name}*.\nNome: ${formData.nome}\nCPF: ${formData.cpf}${addressTxt}`;
-            const url = `https://wa.me/559192294869?text=${encodeURIComponent(text)}`;
+            const url = `https://wa.me/5511943293639?text=${encodeURIComponent(text)}`;
 
             window.open(url, '_blank');
             setIsModalOpen(false);
