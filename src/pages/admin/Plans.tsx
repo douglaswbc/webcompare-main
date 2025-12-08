@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { Plan, Provider, Benefit } from '../../types'; // Adicionado Benefit
-import { catalogService } from '../../services/catalogService';
+import { supabase } from '../../supabaseClient'; // 🔥 Voltando a usar o client direto para corrigir o erro
+import { Plan, Provider, Benefit } from '../../types';
 
 // Componentes Refatorados
 import CepImporter from '../../components/admin/CepImporter';
@@ -32,20 +32,35 @@ const Plans: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Carrega planos, provedores e benefícios em paralelo
-      const [plansData, providersData, benefitsData] = await Promise.all([
-        catalogService.getPlans(),
-        catalogService.getProviders(),
-        catalogService.getBenefits() // Assumindo que você criou este método no service
-      ]);
+      // 1. Buscar Planos
+      const { data: plansData, error: plansError } = await supabase
+        .from('plans')
+        .select('*, providers(name)')
+        .order('created_at', { ascending: false });
+      if (plansError) throw plansError;
 
-      setPlans(plansData);
-      setProviders(providersData);
-      setBenefits(benefitsData || []);
+      // 2. Buscar Provedores
+      const { data: providersData, error: providersError } = await supabase
+        .from('providers')
+        .select('*')
+        .order('name');
+      if (providersError) throw providersError;
 
-    } catch (error) {
+      // 3. Buscar Benefícios (Correção do erro "getBenefits is not a function")
+      const { data: benefitsData, error: benefitsError } = await supabase
+        .from('benefits')
+        .select('*')
+        .order('text');
+      // Não lançamos erro aqui se a tabela não existir ainda, apenas logamos
+      if (benefitsError) console.warn('Tabela benefits pode não existir ou estar vazia', benefitsError);
+
+      setPlans((plansData as any) || []);
+      setProviders((providersData as any) || []);
+      setBenefits((benefitsData as any) || []);
+
+    } catch (error: any) {
       console.error(error);
-      toast.error('Erro ao carregar dados.');
+      toast.error('Erro ao carregar dados: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -63,11 +78,15 @@ const Plans: React.FC = () => {
       // Limpeza específica para planos
       if (view === 'plans') delete payload.providers;
 
-      await catalogService.saveItem(
-        table,
-        payload,
-        editingItem?.id
-      );
+      if (editingItem?.id) {
+        // UPDATE
+        const { error } = await supabase.from(table).update(payload).eq('id', editingItem.id);
+        if (error) throw error;
+      } else {
+        // INSERT
+        const { error } = await supabase.from(table).insert(payload);
+        if (error) throw error;
+      }
 
       toast.success('Salvo com sucesso!');
       setIsModalOpen(false);
@@ -85,7 +104,9 @@ const Plans: React.FC = () => {
     if (view === 'benefits') table = 'benefits';
 
     try {
-      await catalogService.deleteItem(table, id);
+      const { error } = await supabase.from(table).delete().eq('id', id);
+      if (error) throw error;
+
       toast.success('Item excluído.');
       fetchData();
     } catch (error: any) {
@@ -117,7 +138,7 @@ const Plans: React.FC = () => {
           {[
             { id: 'plans', label: 'Planos', icon: 'router' },
             { id: 'providers', label: 'Provedores', icon: 'business' },
-            { id: 'benefits', label: 'Benefícios', icon: 'stars' }, // Novo Botão
+            { id: 'benefits', label: 'Benefícios', icon: 'stars' },
             { id: 'import_ceps', label: 'CEPs', icon: 'pin_drop' },
             { id: 'import_cities', label: 'Cidades', icon: 'location_city' }
           ].map((tab) => (
