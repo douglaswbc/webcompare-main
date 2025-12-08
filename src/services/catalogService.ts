@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
-import { Plan, Provider } from '../types';
+import { supabase } from '../supabaseClient';
+import { Plan, Provider, Benefit } from '../types';
 
 export const catalogService = {
   // --- LEITURA ---
@@ -21,8 +21,25 @@ export const catalogService = {
     return data as Provider[];
   },
 
+  // --- NOVO: Lógica de Benefícios ---
+  async getBenefits() {
+    const { data, error } = await supabase
+      .from('benefits')
+      .select('*')
+      .order('text');
+
+    // Se a tabela não existir, retorna array vazio em vez de estourar erro
+    if (error && error.code === '42P01') {
+      console.warn('Tabela benefits não encontrada.');
+      return [];
+    }
+    if (error) throw error;
+    return data as Benefit[];
+  },
+
   // --- ESCRITA (Genérica para simplificar) ---
-  async saveItem(table: 'plans' | 'providers', data: any, id?: string) {
+  // Agora aceita 'benefits' também
+  async saveItem(table: 'plans' | 'providers' | 'benefits', data: any, id?: string) {
     if (id) {
       // Update
       const { error } = await supabase.from(table).update(data).eq('id', id);
@@ -34,7 +51,7 @@ export const catalogService = {
     }
   },
 
-  async deleteItem(table: 'plans' | 'providers', id: string) {
+  async deleteItem(table: 'plans' | 'providers' | 'benefits', id: string) {
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) throw error;
   },
@@ -51,16 +68,16 @@ export const catalogService = {
       }));
 
       const { error } = await supabase.from('serviceable_ceps').insert(batch);
-      
+
       if (error) throw error;
 
       insertedCount += batch.length;
       onProgress(Math.round((insertedCount / ceps.length) * 100));
     }
     return insertedCount;
-  }, // <--- A VÍRGULA QUE FALTAVA ESTAVA AQUI
+  },
 
-  // --- IMPORTAÇÃO DE CIDADES (NOVO) ---
+  // --- IMPORTAÇÃO DE CIDADES ---
   async importCitiesBatch(providerId: string, cities: { city: string; uf: string }[], onProgress: (pct: number) => void) {
     const BATCH_SIZE = 500;
     let insertedCount = 0;
@@ -73,7 +90,7 @@ export const catalogService = {
       }));
 
       const { error } = await supabase.from('serviceable_cities').insert(batch);
-      
+
       if (error) throw error;
 
       insertedCount += batch.length;
