@@ -86,12 +86,12 @@ const CatalogModal: React.FC<CatalogModalProps> = ({ isOpen, onClose, onSave, in
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-background-paper-dark w-full max-w-4xl rounded-2xl border border-white/10 p-8 max-h-[90vh] overflow-y-auto shadow-2xl custom-scrollbar">
-        <h3 className="text-2xl font-black text-text-inverted mb-8 border-b border-white/10 pb-4">
+      <div className="bg-background-paper-dark w-full max-w-4xl rounded-2xl border border-white/10 p-4 md:p-8 max-h-[90vh] overflow-y-auto shadow-2xl custom-scrollbar flex flex-col">
+        <h3 className="text-xl md:text-2xl font-black text-text-inverted mb-6 md:mb-8 border-b border-white/10 pb-4">
           {initialData ? 'Editar' : 'Criar'} {type === 'plans' ? 'Plano' : 'Provedor'}
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {type === 'providers' ? (
             // --- FORM DE PROVEDOR ---
             <>
@@ -102,9 +102,9 @@ const CatalogModal: React.FC<CatalogModalProps> = ({ isOpen, onClose, onSave, in
           ) : (
             // --- FORM DE PLANO ---
             <>
-              <div className="col-span-4 text-primary font-bold text-xs uppercase tracking-widest border-b border-white/10 pb-2 mt-2">Informações Principais</div>
+              <div className="col-span-1 md:col-span-4 text-primary font-bold text-xs uppercase tracking-widest border-b border-white/10 pb-2 mt-2">Informações Principais</div>
               <InputField label="Nome do Plano" value={formData.name} onChange={(e: any) => setFormData({ ...formData, name: e.target.value })} colSpan={2} />
-              <div className="col-span-2">
+              <div className="col-span-1 md:col-span-2">
                 <label className="text-text-muted text-[10px] uppercase font-bold mb-1.5 block tracking-wider">Provedor</label>
                 <select className="w-full bg-background-dark text-text-inverted p-3 rounded-lg border border-white/10 focus:border-primary outline-none"
                   value={formData.provider_id} onChange={(e: any) => setFormData({ ...formData, provider_id: e.target.value })}>
@@ -116,7 +116,7 @@ const CatalogModal: React.FC<CatalogModalProps> = ({ isOpen, onClose, onSave, in
               <InputField label="Ciclo (ex: /mês)" value={formData.period} onChange={(e: any) => setFormData({ ...formData, period: e.target.value })} />
               <InputField label="Subtítulo Comercial" value={formData.subtitle} onChange={(e: any) => setFormData({ ...formData, subtitle: e.target.value })} colSpan={2} />
 
-              <div className="col-span-4 text-primary font-bold text-xs uppercase tracking-widest border-b border-white/10 pb-2 mt-4">Detalhes Técnicos</div>
+              <div className="col-span-1 md:col-span-4 text-primary font-bold text-xs uppercase tracking-widest border-b border-white/10 pb-2 mt-4">Detalhes Técnicos</div>
               <InputField label="Download (ex: 500 Mega)" value={formData.download_speed} onChange={(e: any) => setFormData({ ...formData, download_speed: e.target.value })} />
               <InputField label="Upload" value={formData.upload_speed} onChange={(e: any) => setFormData({ ...formData, upload_speed: e.target.value })} />
               <InputField label="Tecnologia" value={formData.connection_type} onChange={(e: any) => setFormData({ ...formData, connection_type: e.target.value })} />
@@ -125,7 +125,7 @@ const CatalogModal: React.FC<CatalogModalProps> = ({ isOpen, onClose, onSave, in
               <InputField label="URL do Banner" value={formData.banner_image} onChange={(e: any) => setFormData({ ...formData, banner_image: e.target.value })} colSpan={4} />
 
               {/* --- SEÇÃO DE BENEFÍCIOS --- */}
-              <div className="col-span-4 mt-6">
+              <div className="col-span-1 md:col-span-4 mt-6">
                 <div className="flex justify-between items-center border-b border-white/10 pb-2 mb-4">
                     <span className="text-primary font-bold text-xs uppercase tracking-widest">Benefícios Inclusos</span>
                     <button 
@@ -136,10 +136,10 @@ const CatalogModal: React.FC<CatalogModalProps> = ({ isOpen, onClose, onSave, in
                     </button>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                     {benefits.map((benefit, idx) => (
-                        <div key={idx} className="flex gap-2 items-center">
-                            <div className="w-1/3">
+                        <div key={idx} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center bg-background-dark/30 sm:bg-transparent p-2 sm:p-0 rounded-lg">
+                            <div className="w-full sm:w-1/3">
                                 <input 
                                     placeholder="Ícone (ex: wifi)" 
                                     className="w-full bg-background-dark text-text-inverted p-2 rounded border border-white/10 text-sm"
@@ -147,15 +147,18 @@ const CatalogModal: React.FC<CatalogModalProps> = ({ isOpen, onClose, onSave, in
                                     onChange={e => updateBenefit(idx, 'icon', e.target.value)}
                                 />
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 w-full sm:w-auto flex gap-2">
                                 <input 
                                     placeholder="Descrição (ex: Wi-Fi Grátis)" 
                                     className="w-full bg-background-dark text-text-inverted p-2 rounded border border-white/10 text-sm"
                                     value={benefit.text}
                                     onChange={e => updateBenefit(idx, 'text', e.target.value)}
                                 />
+                                <button onClick={() => removeBenefit(idx)} className="text-red-400 hover:text-red-300 p-2 sm:hidden bg-white/5 rounded">
+                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                </button>
                             </div>
-                            <button onClick={() => removeBenefit(idx)} className="text-red-400 hover:text-red-300 p-2">
+                            <button onClick={() => removeBenefit(idx)} className="text-red-400 hover:text-red-300 p-2 hidden sm:block">
                                 <span className="material-symbols-outlined text-lg">delete</span>
                             </button>
                         </div>
@@ -172,13 +175,13 @@ const CatalogModal: React.FC<CatalogModalProps> = ({ isOpen, onClose, onSave, in
           )}
 
           {/* CHECKBOXES COMUNS (Status) */}
-          <div className="col-span-4 mt-2 p-4 bg-background-dark rounded-xl border border-white/5 flex gap-6">
-            <label className="flex items-center gap-3 cursor-pointer text-text-inverted font-bold select-none hover:text-primary transition-colors">
+          <div className="col-span-1 md:col-span-4 mt-2 p-4 bg-background-dark rounded-xl border border-white/5 flex flex-col sm:flex-row gap-4 sm:gap-6">
+            <label className="flex items-center gap-3 cursor-pointer text-text-inverted font-bold select-none hover:text-primary transition-colors p-2 sm:p-0 bg-white/5 sm:bg-transparent rounded-lg">
               <input type="checkbox" checked={!!formData.active} onChange={e => setFormData({ ...formData, active: e.target.checked })} className="w-5 h-5 accent-primary cursor-pointer" />
               {type === 'plans' ? 'Plano Ativo' : 'Provedor Ativo'}
             </label>
             {type === 'plans' && (
-              <label className="flex items-center gap-3 cursor-pointer text-text-inverted font-bold select-none hover:text-accent transition-colors">
+              <label className="flex items-center gap-3 cursor-pointer text-text-inverted font-bold select-none hover:text-accent transition-colors p-2 sm:p-0 bg-white/5 sm:bg-transparent rounded-lg">
                 <input type="checkbox" checked={!!formData.is_featured} onChange={e => setFormData({ ...formData, is_featured: e.target.checked })} className="w-5 h-5 accent-accent cursor-pointer" />
                 Destaque
               </label>
@@ -186,9 +189,9 @@ const CatalogModal: React.FC<CatalogModalProps> = ({ isOpen, onClose, onSave, in
           </div>
         </div>
 
-        <div className="flex gap-3 mt-8 justify-end pt-6 border-t border-white/10">
-          <button onClick={onClose} className="px-6 py-3 rounded-xl text-text-muted hover:text-white font-bold transition-colors">Cancelar</button>
-          <button onClick={handleSave} className="bg-primary px-8 py-3 rounded-xl text-white font-bold hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all hover:-translate-y-1">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-8 justify-end pt-6 border-t border-white/10">
+          <button onClick={onClose} className="w-full sm:w-auto px-6 py-3 rounded-xl text-text-muted hover:text-white font-bold transition-colors bg-white/5 sm:bg-transparent">Cancelar</button>
+          <button onClick={handleSave} className="w-full sm:w-auto bg-primary px-8 py-3 rounded-xl text-white font-bold hover:bg-primary-hover shadow-lg shadow-primary/20 transition-all hover:-translate-y-1">
             Salvar Alterações
           </button>
         </div>
