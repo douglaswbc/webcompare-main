@@ -4,25 +4,23 @@ import JSZip from 'jszip';
 import * as toGeoJSON from '@mapbox/togeojson';
 import { coverageService } from '../../services/coverageService';
 
-// Lista de Estados para o Dropdown
+// ... (Mantenha a constante ESTADOS igual) ...
 const ESTADOS = [
     'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
     'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
 const Areas: React.FC = () => {
-    // Estados de Upload
-    const [providerName, setProviderName] = useState('');
+    // MUDANÇA 1: providerName vira providerId
+    const [providerId, setProviderId] = useState('');
     const [areaName, setAreaName] = useState('');
     const [selectedUfs, setSelectedUfs] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    // Estados de Dados
     const [providers, setProviders] = useState<any[]>([]);
     const [areas, setAreas] = useState<any[]>([]);
 
-    // Estados de Lista e Paginação
     const [loadingList, setLoadingList] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
@@ -71,13 +69,18 @@ const Areas: React.FC = () => {
     };
 
     const handleClearProviderAreas = async () => {
-        if (!providerName) return toast.warn('Selecione um provedor primeiro.');
-        if (!confirm(`ATENÇÃO: Isso apagará TODAS as áreas de "${providerName}". Deseja continuar?`)) return;
+        // MUDANÇA 2: Usar ID na lógica
+        if (!providerId) return toast.warn('Selecione um provedor primeiro.');
+        
+        // Encontra o nome apenas para exibir no confirm
+        const pName = providers.find(p => p.id === providerId)?.name;
+        
+        if (!confirm(`ATENÇÃO: Isso apagará TODAS as áreas de "${pName}". Deseja continuar?`)) return;
 
         setUploading(true);
         try {
-            await coverageService.clearProviderAreas(providerName);
-            toast.success(`Todas as áreas de ${providerName} foram removidas.`);
+            await coverageService.clearProviderAreas(providerId); // Passa ID
+            toast.success(`Todas as áreas de ${pName} foram removidas.`);
             fetchAreas();
         } catch (error: any) {
             toast.error('Erro ao limpar áreas: ' + error.message);
@@ -86,7 +89,7 @@ const Areas: React.FC = () => {
         }
     };
 
-    // Remove a dimensão Z (altitude) das coordenadas se existir
+    // ... (Mantenha a função removeZDimension e toggleUf iguais) ...
     const removeZDimension = (coords: any[]): any[] => {
         return coords.map((point: any) => {
             if (Array.isArray(point[0])) return removeZDimension(point);
@@ -104,7 +107,8 @@ const Areas: React.FC = () => {
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file || !providerName || selectedUfs.length === 0) {
+        // MUDANÇA 3: Validação com providerId
+        if (!file || !providerId || selectedUfs.length === 0) {
             toast.warn('Selecione Provedor, pelo menos um UF e o Arquivo.');
             return;
         }
@@ -114,6 +118,7 @@ const Areas: React.FC = () => {
         setProgress(0);
 
         try {
+            // ... (Lógica de ler KML/KMZ permanece igual) ...
             let kmlText = '';
             if (file.name.endsWith('.kmz')) {
                 const zip = await JSZip.loadAsync(file);
@@ -132,8 +137,8 @@ const Areas: React.FC = () => {
             let errors = 0;
             let skipped = 0;
 
-            // Busca nomes existentes para evitar duplicidade
-            const existingNames = await coverageService.checkExistingAreas(providerName, ufsString);
+            // MUDANÇA 4: Checa existentes usando ID
+            const existingNames = await coverageService.checkExistingAreas(providerId, ufsString);
 
             if (geoJson.type === 'FeatureCollection') {
                 const totalFeatures = geoJson.features.length;
@@ -152,19 +157,19 @@ const Areas: React.FC = () => {
 
                     if (feature.geometry) {
                         let finalGeometry: any = feature.geometry;
-
+                        // ... (Normalização da geometria permanece igual) ...
                         if (finalGeometry.type === 'Polygon') {
                             finalGeometry = { type: 'MultiPolygon', coordinates: [finalGeometry.coordinates] };
                         }
-
                         if (finalGeometry.type === 'MultiPolygon') {
                             finalGeometry.coordinates = removeZDimension(finalGeometry.coordinates);
                         }
 
                         if (finalGeometry.type === 'MultiPolygon' || finalGeometry.type === 'Polygon') {
                             try {
+                                // MUDANÇA 5: Cria usando provider_id
                                 await coverageService.createArea({
-                                    provider_name: providerName,
+                                    provider_id: providerId,
                                     area_name: featureName,
                                     uf: ufsString,
                                     geom: finalGeometry
@@ -176,16 +181,15 @@ const Areas: React.FC = () => {
                             }
                         }
                     }
-                    // Pausa para não travar a UI
                     if (processed % 10 === 0) await new Promise(r => setTimeout(r, 0));
                 }
             }
 
             if (count > 0) {
-                toast.success(`${count} áreas importadas para ${ufsString}! (${skipped} duplicadas)`);
+                toast.success(`${count} áreas importadas!`);
                 fetchAreas();
                 setAreaName('');
-                setSelectedUfs([]);
+                // setSelectedUfs([]); // Opcional limpar
             } else if (skipped > 0 && count === 0) {
                 toast.warn('Todas as áreas já existiam.');
             } else {
@@ -207,25 +211,27 @@ const Areas: React.FC = () => {
         <div className="p-6">
             <h1 className="text-2xl font-bold text-white mb-6">Gerenciar Áreas de Cobertura</h1>
 
-            {/* --- FORMULÁRIO DE UPLOAD --- */}
+            {/* --- FORMULÁRIO --- */}
             <div className="bg-background-paper-dark p-6 rounded-xl border border-white/10 mb-8 max-w-2xl">
-                <h3 className="text-lg font-bold text-white mb-4">Importar KML/KMZ</h3>
-
+                {/* ... (Cabeçalho igual) ... */}
+                
                 <div className="space-y-4">
                     <div>
                         <label className="block text-slate-400 text-xs uppercase font-bold mb-2">Provedor</label>
+                        {/* MUDANÇA 6: Select value é providerId e options usam p.id */}
                         <select
                             className="w-full bg-slate-900 text-white p-3 rounded border border-slate-700 focus:border-primary outline-none"
-                            value={providerName}
-                            onChange={(e) => setProviderName(e.target.value)}
+                            value={providerId}
+                            onChange={(e) => setProviderId(e.target.value)}
                         >
                             <option value="">Selecione...</option>
                             {providers.map(p => (
-                                <option key={p.id} value={p.name}>{p.name}</option>
+                                <option key={p.id} value={p.id}>{p.name}</option>
                             ))}
                         </select>
                     </div>
 
+                    {/* ... (Input areaName igual) ... */}
                     <div>
                         <label className="block text-slate-400 text-xs uppercase font-bold mb-2">Nome da Área (Opcional)</label>
                         <input
@@ -238,7 +244,8 @@ const Areas: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className={`transition-opacity ${!providerName ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                        <div className={`transition-opacity ${!providerId ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                            {/* ... (Input file igual) ... */}
                             <label className="block text-slate-400 text-xs uppercase font-bold mb-2">Arquivo KML/KMZ</label>
                             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-600 rounded-lg cursor-pointer hover:bg-slate-900 hover:border-primary transition-colors">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -250,9 +257,10 @@ const Areas: React.FC = () => {
                         </div>
 
                         <div className="flex items-end">
+                            {/* MUDANÇA 7: Botão limpar checa providerId */}
                             <button
                                 onClick={handleClearProviderAreas}
-                                disabled={!providerName || uploading}
+                                disabled={!providerId || uploading}
                                 title="Apagar todas as áreas deste provedor"
                                 className="w-full bg-red-600/20 hover:bg-red-600/40 text-red-400 p-3 rounded border border-red-600/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 h-32"
                             >
@@ -262,7 +270,7 @@ const Areas: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* SELETOR DE MÚLTIPLOS ESTADOS */}
+                    {/* ... (Seletor de Estados igual) ... */}
                     <div className="bg-slate-900 p-4 rounded border border-slate-700">
                         <label className="block text-slate-400 text-xs uppercase font-bold mb-2">Selecione os Estados (UF)</label>
                         <div className="grid grid-cols-5 gap-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
@@ -284,9 +292,9 @@ const Areas: React.FC = () => {
                             {selectedUfs.length} selecionados
                         </p>
                     </div>
-
                 </div>
 
+                {/* ... (Barra de progresso igual) ... */}
                 {uploading && (
                     <div className="mt-4">
                         <div className="flex justify-between text-xs text-slate-300 mb-1">
@@ -305,8 +313,9 @@ const Areas: React.FC = () => {
 
             {/* --- LISTAGEM --- */}
             <div className="flex flex-col gap-4">
+                {/* ... (Barra de filtro igual) ... */}
                 <div className="flex items-center justify-between bg-background-paper-dark p-4 rounded-xl border border-white/10">
-                    <div className="flex items-center gap-2 w-full max-w-md">
+                     <div className="flex items-center gap-2 w-full max-w-md">
                         <span className="material-symbols-outlined text-slate-400">filter_list</span>
                         <input
                             placeholder="Filtrar por Provedor..."
@@ -341,7 +350,8 @@ const Areas: React.FC = () => {
                                     <tr key={area.id} className="hover:bg-white/5 transition-colors">
                                         <td className="p-4 font-bold text-white flex items-center gap-2">
                                             <span className="w-2 h-2 rounded-full bg-primary"></span>
-                                            {area.provider_name}
+                                            {/* MUDANÇA 8: Exibe nome via relação (providers.name) */}
+                                            {area.providers?.name || 'Provedor Removido'}
                                         </td>
                                         <td className="p-4 font-medium text-white max-w-[150px] truncate" title={area.uf}>
                                             {area.uf ? area.uf.split(',').map((u: string) => (
@@ -361,10 +371,11 @@ const Areas: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
-
-                    {totalCount > 0 && (
+                    {/* ... (Paginação igual) ... */}
+                     {totalCount > 0 && (
                         <div className="p-4 border-t border-white/10 flex items-center justify-between bg-slate-900">
-                            <button
+                           {/* ... Botões de paginação ... */}
+                             <button
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 className="flex items-center gap-1 text-slate-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

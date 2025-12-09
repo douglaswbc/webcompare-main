@@ -38,7 +38,11 @@ export const catalogService = {
   // --- ESCRITA (Genérica) ---
   async saveItem(table: 'plans' | 'providers' | 'benefits', data: any, id?: string) {
     if (table === 'plans') {
-        const { benefits, ...mainData } = data;
+        // CORREÇÃO AQUI: Removemos 'providers' e 'created_at' do objeto antes de salvar
+        // 'providers' vem do join na leitura e não existe na tabela plans
+        // 'created_at' é gerado automaticamente pelo banco
+        const { benefits, providers, created_at, ...mainData } = data;
+        
         let savedId = id;
 
         if (id) {

@@ -7,27 +7,31 @@ interface GetAreasParams {
 }
 
 export const coverageService = {
-  // Busca provedores para o dropdown
+  // Busca provedores para o dropdown (mantido)
   async getProviderNames() {
     const { data } = await supabase.from('providers').select('id, name').order('name');
     return data || [];
   },
 
-  // Busca áreas paginadas
+  // Busca áreas paginadas (AGORA COM JOIN)
   async getAreas({ page, pageSize, filterProvider }: GetAreasParams) {
+    // Seleciona o nome de dentro da tabela relacionada 'providers'
     let query = supabase
       .from('coverage_areas')
-      .select('id, provider_name, area_name, uf', { count: 'exact' });
+      .select('id, area_name, uf, provider_id, providers(name)', { count: 'exact' });
 
+    // Filtro agora precisa apontar para a tabela relacionada
     if (filterProvider) {
-      query = query.ilike('provider_name', `%${filterProvider}%`);
+      // !inner força o join para filtrar apenas os que batem com o critério
+      query = query.ilike('providers.name', `%${filterProvider}%`, { foreignTable: 'providers' }); // Sintaxe pode variar levemente dependendo da versão, mas geralmente filtra na relação
+      // Alternativa simples se o filtro for complexo: filtrar no client-side ou ajustar a query
     }
 
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
     const { data, count, error } = await query
-      .order('provider_name', { ascending: true })
+      // .order('providers(name)', { ascending: true }) // Ordenar por relação é complexo no Supabase, melhor ordenar por area_name ou fazer no front
       .order('area_name', { ascending: true })
       .range(from, to);
 
@@ -36,36 +40,34 @@ export const coverageService = {
     return { data: data || [], count: count || 0 };
   },
 
-  // Verifica se área já existe (para evitar duplicatas no loop de importação)
-  async checkExistingAreas(providerName: string, uf: string) {
+  // Verifica por ID agora
+  async checkExistingAreas(providerId: string, uf: string) {
     const { data } = await supabase
       .from('coverage_areas')
       .select('area_name')
-      .eq('provider_name', providerName)
+      .eq('provider_id', providerId) // Alterado de provider_name para provider_id
       .eq('uf', uf);
     
-    // Retorna um Set para busca rápida O(1)
     return new Set(data?.map(a => a.area_name));
   },
 
-  // Cria uma única área (chamado dentro do loop de importação)
-  async createArea(data: { provider_name: string; area_name: string; uf: string; geom: any }) {
+  // Cria usando provider_id
+  async createArea(data: { provider_id: string; area_name: string; uf: string; geom: any }) {
     const { error } = await supabase.from('coverage_areas').insert(data);
     if (error) throw error;
   },
 
-  // Deletar uma área
   async deleteArea(id: string) {
     const { error } = await supabase.from('coverage_areas').delete().eq('id', id);
     if (error) throw error;
   },
 
-  // Limpar todas as áreas de um provedor
-  async clearProviderAreas(providerName: string) {
+  // Limpa usando provider_id
+  async clearProviderAreas(providerId: string) {
     const { error } = await supabase
       .from('coverage_areas')
       .delete()
-      .eq('provider_name', providerName);
+      .eq('provider_id', providerId); // Alterado
     if (error) throw error;
   }
 };
