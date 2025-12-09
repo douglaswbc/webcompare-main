@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from './supabase';
 import { Plan, Provider, Benefit } from '../types';
 
 export const catalogService = {
@@ -6,7 +6,7 @@ export const catalogService = {
   async getPlans() {
     const { data, error } = await supabase
       .from('plans')
-      .select('*, providers(name)')
+      .select('*, providers(name), benefits(*)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data as Plan[];
@@ -21,42 +21,72 @@ export const catalogService = {
     return data as Provider[];
   },
 
-  // --- NOVO: Lógica de Benefícios ---
-  async getBenefits() {
-    const { data, error } = await supabase
-      .from('benefits')
-      .select('*')
-      .order('text');
+  // --- ESCRITA INTELIGENTE (Com suporte a Benefícios) ---
+  async saveItem(table: 'plans' | 'providers', data: any, id?: string) {
+    // Separa os benefícios do resto dos dados do plano
+    const { benefits, ...mainData } = data;
 
-    // Se a tabela não existir, retorna array vazio em vez de estourar erro
-    if (error && error.code === '42P01') {
-      console.warn('Tabela benefits não encontrada.');
-      return [];
-    }
-    if (error) throw error;
-    return data as Benefit[];
-  },
+    let savedId = id;
 
-  // --- ESCRITA (Genérica para simplificar) ---
-  // Agora aceita 'benefits' também
-  async saveItem(table: 'plans' | 'providers' | 'benefits', data: any, id?: string) {
+    // 1. Salva o dado principal (Plano ou Provedor)
     if (id) {
-      // Update
-      const { error } = await supabase.from(table).update(data).eq('id', id);
+      // UPDATE
+      const { error } = await supabase.from(table).update(mainData).eq('id', id);
       if (error) throw error;
     } else {
-      // Insert
-      const { error } = await supabase.from(table).insert(data);
+      // INSERT
+      // Precisamos do ID retornado para salvar os benefícios
+      const { data: insertedData, error } = await supabase
+        .from(table)
+        .insert(mainData)
+        .select()
+        .single();
+        
       if (error) throw error;
+      savedId = insertedData.id;
+    }
+
+    // 2. Se for um Plano e tiver benefícios, atualiza a tabela 'benefits'
+    if (table === 'plans' && savedId && Array.isArray(benefits)) {
+        // Estratégia: Deleta todos os antigos e recria os novos (mais simples e seguro)
+        
+        // Remove benefícios antigos desse plano
+        const { error: deleteError } = await supabase
+            .from('benefits')
+            .delete()
+            .eq('plan_id', savedId);
+        
+        if (deleteError) throw deleteError;
+
+        // Prepara os novos para inserção
+        if (benefits.length > 0) {
+            const benefitsToInsert = benefits.map((b: Partial<Benefit>) => ({
+                plan_id: savedId,
+                text: b.text,
+                icon: b.icon || 'check_circle'
+            }));
+
+            const { error: insertError } = await supabase
+                .from('benefits')
+                .insert(benefitsToInsert);
+            
+            if (insertError) throw insertError;
+        }
     }
   },
 
-  async deleteItem(table: 'plans' | 'providers' | 'benefits', id: string) {
+  async deleteItem(table: 'plans' | 'providers', id: string) {
+    // Se for plano, o 'cascade' do banco deve deletar os benefícios,
+    // mas se não tiver configurado, deletamos manualmente por segurança
+    if (table === 'plans') {
+        await supabase.from('benefits').delete().eq('plan_id', id);
+    }
+    
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) throw error;
   },
 
-  // --- IMPORTAÇÃO EM MASSA (CEPs) ---
+  // --- IMPORTAÇÃO EM MASSA ---
   async importCepsBatch(providerId: string, ceps: string[], onProgress: (pct: number) => void) {
     const BATCH_SIZE = 1000;
     let insertedCount = 0;
@@ -68,7 +98,6 @@ export const catalogService = {
       }));
 
       const { error } = await supabase.from('serviceable_ceps').insert(batch);
-
       if (error) throw error;
 
       insertedCount += batch.length;
@@ -77,7 +106,6 @@ export const catalogService = {
     return insertedCount;
   },
 
-  // --- IMPORTAÇÃO DE CIDADES ---
   async importCitiesBatch(providerId: string, cities: { city: string; uf: string }[], onProgress: (pct: number) => void) {
     const BATCH_SIZE = 500;
     let insertedCount = 0;
@@ -90,7 +118,6 @@ export const catalogService = {
       }));
 
       const { error } = await supabase.from('serviceable_cities').insert(batch);
-
       if (error) throw error;
 
       insertedCount += batch.length;
