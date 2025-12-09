@@ -20,6 +20,7 @@ const Leads = lazy(() => import('./pages/admin/Leads'));
 const Areas = lazy(() => import('./pages/admin/Areas'));
 const Plans = lazy(() => import('./pages/admin/Plans'));
 const AdminArticles = lazy(() => import('./pages/admin/Articles'));
+const WhatsappConfig = lazy(() => import('./pages/admin/WhatsappConfig'));
 
 const App: React.FC = () => {
   return (
@@ -61,6 +62,7 @@ const App: React.FC = () => {
             <Route path="areas" element={<Areas />} />
             <Route path="planos" element={<Plans />} />
             <Route path="artigos" element={<AdminArticles />} />
+            <Route path="whatsapp" element={<WhatsappConfig />} />
           </Route>
 
           {/* Rota 404 / Redirecionamento */}

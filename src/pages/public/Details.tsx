@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 // Imports corrigidos para a nova estrutura
 import { Plan, UserAddress, UserPersonalData } from '../../types';
 import { leadService } from '../../services/leadService';
+import { settingsService } from '../../services/settingsService'; // Importe o serviço
 
 const Details: React.FC = () => {
     const navigate = useNavigate();
@@ -19,10 +20,26 @@ const Details: React.FC = () => {
         nome: '', telefone: '', cpf: '', rg: ''
     });
 
+    // Estado para o número do WhatsApp (Padrão inicial caso falhe a busca)
+    const [whatsappNumber, setWhatsappNumber] = useState('5511943293639');
+
     // Se não tiver plano selecionado, volta pra home
     useEffect(() => {
         if (!plan) navigate('/');
     }, [plan, navigate]);
+
+    // Busca o número do WhatsApp no banco ao carregar a página
+    useEffect(() => {
+        const fetchPhone = async () => {
+            try {
+                const num = await settingsService.getWhatsAppNumber();
+                if (num) setWhatsappNumber(num);
+            } catch (error) {
+                console.error("Erro ao carregar whatsApp number", error);
+            }
+        };
+        fetchPhone();
+    }, []);
 
     if (!plan) return null;
 
@@ -51,7 +68,9 @@ const Details: React.FC = () => {
                 : '';
 
             const text = `Olá! Quero contratar *${plan.name}*.\nNome: ${formData.nome}\nCPF: ${formData.cpf}${addressTxt}`;
-            const url = `https://wa.me/5511943293639?text=${encodeURIComponent(text)}`;
+            
+            // CORREÇÃO AQUI: Usando a variável de estado whatsappNumber
+            const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
 
             window.open(url, '_blank');
             setIsModalOpen(false);

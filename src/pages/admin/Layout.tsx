@@ -99,6 +99,10 @@ const AdminLayout: React.FC = () => {
           <NavLink to="/admin/planos" icon="router" label="Planos e Provedores" />
           <NavLink to="/admin/artigos" icon="article" label="Artigos" />
 
+          {/* --- NOVO MENU --- */}
+          <div className="my-2 border-t border-white/5 mx-3"></div>
+          <NavLink to="/admin/whatsapp" icon="chat" label="WhatsApp Config" />
+
           <div className="mt-auto border-t border-white/10 pt-6 space-y-2">
             <Link to="/" className="flex items-center gap-3 text-text-muted hover:text-text-inverted px-3 py-2 hover:bg-white/5 rounded-lg transition-colors">
               <span className="material-symbols-outlined text-xl">public</span>
