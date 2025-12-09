@@ -12,10 +12,14 @@ interface SearchParams {
 
 export const planService = {
   async getAvailablePlans({ cep, city, uf, lat, lng }: SearchParams): Promise<Plan[]> {
-    const plansIdsSet = new Set<string>();
     const cleanCep = cep.replace(/\D/g, '');
+    
+    // Armazena os IDs encontrados e o "tipo" de match (qualidade da cobertura)
+    // Usamos um Map para garantir que, se um plano for achado por CEP e Cidade, prevaleça o melhor match
+    const foundPlansMap = new Map<string, 'cep' | 'map' | 'city'>();
 
-    // --- ETAPA 1: Busca via RPC (Polígonos KMZ) ---
+    // --- ETAPA 1: Busca via RPC (Banco de Dados - CEP, Mapa e Cidade) ---
+    // A RPC já faz a busca nas 3 tabelas e retorna o match_type ('cep', 'map', 'city')
     const { data: rpcData, error: rpcError } = await supabase.rpc('get_available_plans', {
       user_cep: cleanCep,
       user_lat: lat || 0,
@@ -25,80 +29,53 @@ export const planService = {
     });
 
     if (rpcError) {
-      console.error('Erro na RPC get_available_plans:', rpcError);
-    } else if (rpcData) {
-      rpcData.forEach((p: any) => plansIdsSet.add(p.id));
-    }
+      console.error('Erro na RPC:', rpcError);
+    } 
+    
+    if (rpcData) {
+      rpcData.forEach((item: any) => {
+        // Lógica de prioridade: CEP > MAP > CITY
+        const currentMatch = foundPlansMap.get(item.id);
+        const newMatch = item.match_type;
 
-    // --- ETAPA 2: Busca via Tabela de CEPs (CORRIGIDO) ---
-    if (cleanCep) {
-      console.log("--- DEBUG CEP ---");
-      console.log("Buscando na tabela serviceable_ceps o CEP:", cleanCep);
-
-      // AQUI ESTAVA O ERRO: Usamos 'error' genérico para o console.log funcionar
-      const { data: cepProviders, error } = await supabase
-        .from('serviceable_ceps')
-        .select('provider_id, cep') 
-        .eq('cep', cleanCep);
-
-      console.log("Resultado da Busca:", cepProviders);
-      console.log("Erro (se houver):", error);
-
-      if (error) {
-        console.error('Erro ao buscar CEPs:', error);
-      } else if (cepProviders && cepProviders.length > 0) {
-        const providerIds = cepProviders.map(cp => cp.provider_id);
-        console.log("IDs de Provedores encontrados:", providerIds);
-
-        const { data: plansFromCeps } = await supabase
-          .from('plans')
-          .select('id')
-          .in('provider_id', providerIds)
-          .eq('active', true);
-
-        if (plansFromCeps) {
-          plansFromCeps.forEach((p: any) => plansIdsSet.add(p.id));
+        // Se ainda não tem, adiciona.
+        if (!currentMatch) {
+          foundPlansMap.set(item.id, newMatch);
+        } 
+        // Se já tem como 'city', mas achou 'cep' ou 'map', atualiza para o melhor (upgrade)
+        else if (currentMatch === 'city' && (newMatch === 'cep' || newMatch === 'map')) {
+          foundPlansMap.set(item.id, newMatch);
         }
-      } else {
-        console.warn("Nenhum provedor encontrado para este CEP exato.");
-      }
+      });
     }
 
-    // --- ETAPA 3: Busca via Tabela de Cidades ---
-    if (city && uf) {
-      const searchCity = normalizeCity(city);
-      const searchUf = uf.toUpperCase();
+    // --- FILTRO DE INTELIGÊNCIA (NOVO) ---
+    // Se encontrarmos planos com cobertura EXATA ('cep' ou 'map'),
+    // podemos optar por esconder os planos de cobertura AMPLA ('city'),
+    // pois eles são menos precisos.
+    
+    const hasExactMatch = Array.from(foundPlansMap.values()).some(type => type === 'cep' || type === 'map');
+    const finalPlanIds: string[] = [];
 
-      const { data: cityProviders, error: cityError } = await supabase
-        .from('serviceable_cities')
-        .select('provider_id')
-        .eq('city', searchCity)
-        .eq('uf', searchUf);
-
-      if (cityError) {
-        console.error('Erro ao buscar cidades:', cityError);
-      } else if (cityProviders && cityProviders.length > 0) {
-        const providerIds = cityProviders.map(cp => cp.provider_id);
-
-        const { data: plansFromCities } = await supabase
-          .from('plans')
-          .select('id')
-          .in('provider_id', providerIds)
-          .eq('active', true);
-
-        if (plansFromCities) {
-          plansFromCities.forEach((p: any) => plansIdsSet.add(p.id));
+    foundPlansMap.forEach((matchType, planId) => {
+        if (hasExactMatch) {
+            // Se temos cobertura exata na região, mostramos:
+            // 1. Os planos exatos (CEP/Map)
+            // 2. Opcional: Planos de Satélite (que geralmente vêm por cidade mas cobrem tudo)
+            // Por enquanto, vamos ser estritos: Se tem Fibra no CEP, mostra só Fibra no CEP.
+            if (matchType === 'cep' || matchType === 'map') {
+                finalPlanIds.push(planId);
+            }
+        } else {
+            // Se NINGUÉM atende o CEP exato, mostramos as opções genéricas da Cidade
+            finalPlanIds.push(planId);
         }
-      }
-    }
+    });
 
-    // --- ETAPA 4: Enriquecer os Dados ---
-    if (plansIdsSet.size === 0) {
-      return [];
-    }
+    // Se a lista estiver vazia (nenhum match), retorna vazio
+    if (finalPlanIds.length === 0) return [];
 
-    const uniquePlanIds = Array.from(plansIdsSet);
-
+    // --- ETAPA FINAL: Enriquecer os Dados ---
     const { data: fullPlans, error: plansError } = await supabase
       .from('plans')
       .select(`
@@ -106,7 +83,7 @@ export const planService = {
         providers ( id, name, type, logo_url ),
         benefits ( id, text, icon )
       `)
-      .in('id', uniquePlanIds)
+      .in('id', finalPlanIds)
       .eq('active', true);
 
     if (plansError) throw plansError;
