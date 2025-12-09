@@ -87,10 +87,24 @@ export const catalogService = {
   async importCepsBatch(providerId: string, ceps: string[], onProgress: (pct: number) => void) {
     const BATCH_SIZE = 1000;
     let insertedCount = 0;
+    
     for (let i = 0; i < ceps.length; i += BATCH_SIZE) {
-      const batch = ceps.slice(i, i + BATCH_SIZE).map(cep => ({ cep, provider_id: providerId }));
-      const { error } = await supabase.from('serviceable_ceps').insert(batch);
+      const batch = ceps.slice(i, i + BATCH_SIZE).map(cep => ({ 
+          cep, 
+          provider_id: providerId 
+      }));
+
+      // CORREÇÃO: Usar 'upsert' com 'ignoreDuplicates: true'
+      // Isso faz o banco ignorar quem já existe e inserir apenas os novos
+      const { error } = await supabase
+          .from('serviceable_ceps')
+          .upsert(batch, { 
+              onConflict: 'cep, provider_id', // Nome das colunas da constraint unique
+              ignoreDuplicates: true 
+          });
+
       if (error) throw error;
+      
       insertedCount += batch.length;
       onProgress(Math.round((insertedCount / ceps.length) * 100));
     }
