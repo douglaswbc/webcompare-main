@@ -1,64 +1,65 @@
 @import "tailwindcss";
 
 /* TAILWIND v4 CONFIGURATION
-  Aqui definimos o tema diretamente no CSS.
-  Isso substitui a necessidade do tailwind.config.js para cores básicas.
+  Tema atualizado com a identidade visual "Encontre Seu Plano"
+  Cores: Azul Marinho, Verde Vibrante e Ciano.
 */
 
 @theme {
-  /* --- PALETA DE CORES --- */
+  /* --- PALETA DE CORES (Nova Identidade) --- */
   
-  /* Roxo (Principal) */
-  --color-primary: #6C3AFF;
-  --color-primary-hover: #4B1DFF;
-  --color-primary-dark: #5A44DC;
-  --color-primary-light: #8A63FF;
+  /* Primária: Azul Marinho (Identidade da Marca, Textos Fortes, Fundos Nobres) */
+  --color-primary: #0F3460;
+  --color-primary-hover: #16213E; 
+  --color-primary-dark: #0a1f3a;
+  --color-primary-light: #2c4b70; /* Um pouco mais claro para gradientes */
 
-  /* Laranja (Ação/Destaque) */
-  --color-accent: #FF6A00;
-  --color-accent-hover: #E65F00;
-  --color-accent-light: #FF7A18;
+  /* Accent: Verde Vibrante (AÇÃO, Botões, "PLANO", Confirmação) */
+  --color-accent: #37C64C;
+  --color-accent-hover: #2ea63f;
+  --color-accent-light: #4ade80;
 
-  /* Azul Pastel (Secundário) */
-  --color-secondary: #E7F1FF;
-  --color-secondary-hover: #D0E1FF;
+  /* Secundária: Azul Ciano (Tecnologia, Ícones, Detalhes, Gradientes) */
+  --color-secondary: #0EA5E9;
+  --color-secondary-hover: #0284c7;
 
   /* Status */
-  --color-success: #34d399;
-  --color-state-success: #34d399;
-  --color-state-error: #f87171;
-  --color-state-warning: #fbbf24;
-  --color-state-info: #60a5fa;
+  --color-success: #37C64C;
+  --color-state-success: #37C64C;
+  --color-state-error: #ef4444;
+  --color-state-warning: #f59e0b;
+  --color-state-info: #0EA5E9;
 
   /* Fundos (Modo Claro e Escuro) */
-  --color-background-light: #E7F1FF;      /* Fundo Geral Claro */
+  --color-background-light: #F0F9FF;      /* Azul Alice muito suave (quase branco) */
   --color-background-main: #FFFFFF;       
-  --color-background-dark: #0f172a;       /* Slate 900 (Fundo Geral Escuro) */
+  --color-background-dark: #0f172a;       /* Slate 900 (Fundo Profundo) */
   --color-background-paper: #ffffff;      /* Cards Claros */
   --color-background-paper-dark: #1e293b; /* Slate 800 (Cards Escuros) */
 
   /* Tipografia */
-  --color-text-main: #64748b;             /* Slate 500 */
+  --color-text-main: #475569;             /* Slate 600 */
   --color-text-muted: #94a3b8;            /* Slate 400 */
   --color-text-inverted: #ffffff;         /* Branco puro */
-  --color-text-dark: #1e293b;             /* Slate 800 (Texto escuro no light mode) */
+  --color-text-dark: #0F3460;             /* Azul Marinho (Substitui o preto puro) */
 
   /* --- FONTES --- */
   --font-display: "Inter", "Poppins", sans-serif;
 
-  /* --- SOMBRAS (Glow Effects) --- */
-  --shadow-glow: 0px 4px 18px rgba(108, 58, 255, 0.35);
-  --shadow-orange: 0px 4px 18px rgba(255, 106, 0, 0.35);
+  /* --- SOMBRAS (Glow Effects Atualizados) --- */
+  /* Brilho Ciano para elementos tech */
+  --shadow-glow: 0px 4px 18px rgba(14, 165, 233, 0.45); 
+  /* Brilho Verde para botões de ação (antigo shadow-orange) */
+  --shadow-orange: 0px 4px 18px rgba(55, 198, 76, 0.45); 
 }
 
-/* Estilos Globais e Reset 
-*/
+/* Estilos Globais e Reset */
 @layer base {
   body {
     @apply font-display antialiased;
   }
   
-  /* Scrollbar Personalizada para combinar com o tema */
+  /* Scrollbar Personalizada */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -70,6 +71,6 @@
     @apply bg-background-paper-dark rounded-full border border-white/10;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary;
+    @apply bg-secondary; /* Hover da barra agora é Ciano */
   }
 }
