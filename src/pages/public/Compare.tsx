@@ -136,7 +136,7 @@ const Compare: React.FC = () => {
                 </div>
 
                 {/* Specs Inset */}
-                <div className="grid grid-cols-2 gap-4 mb-6 bg-background-light dark:bg-background-dark/50 p-4 rounded-xl border border-transparent dark:border-text-inverted/5">
+                <div className="grid grid-cols-2 gap-4 mb-4 bg-background-light dark:bg-background-dark/50 p-4 rounded-xl border border-transparent dark:border-text-inverted/5">
                   <div>
                     <span className="text-[10px] text-text-muted uppercase font-bold mb-1 block tracking-wider">Download</span>
                     <div className="flex items-center gap-1 text-primary font-black text-lg">
@@ -153,6 +153,23 @@ const Compare: React.FC = () => {
                   </div>
                 </div>
 
+                {/* --- SEÇÃO DE BENEFÍCIOS (NOVO) --- */}
+                {plan.benefits && plan.benefits.length > 0 && (
+                    <div className="mb-5 flex flex-wrap gap-2">
+                        {plan.benefits.slice(0, 3).map((benefit: any, idx: number) => (
+                            <div key={idx} className="flex items-center gap-1.5 bg-background-light dark:bg-background-dark/30 px-2 py-1 rounded text-xs text-text-main dark:text-text-inverted/80 border border-transparent dark:border-text-inverted/5">
+                                <span className="material-symbols-outlined text-[14px] text-primary">{benefit.icon || 'check_circle'}</span>
+                                {benefit.text}
+                            </div>
+                        ))}
+                        {plan.benefits.length > 3 && (
+                            <div className="flex items-center gap-1 px-2 py-1 text-xs text-text-muted">
+                                +{plan.benefits.length - 3}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div className="w-full h-px bg-background-light dark:bg-text-inverted/5 mb-5"></div>
 
                 {/* Rodapé do Card */}
@@ -167,9 +184,9 @@ const Compare: React.FC = () => {
 
                   <button
                     onClick={() => handleSelectPlan(plan)}
-                    className="flex-1 max-w-[180px] py-3 text-text-inverted font-bold rounded-xl bg-primary hover:bg-primary-hover shadow-lg shadow-glow transition-all hover:scale-105 flex items-center justify-center gap-2"
+                    className="flex-1 max-w-[180px] py-3 text-text-inverted font-bold rounded-xl bg-accent hover:bg-accent-hover shadow-lg shadow-orange transition-all hover:scale-105 flex items-center justify-center gap-2"
                   >
-                    Contratar Agora!
+                    Contratar
                     <span className="material-symbols-outlined text-lg">arrow_forward</span>
                   </button>
                 </div>
